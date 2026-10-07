@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@types/bs58": "^4.0.4"
+  },
+  "scripts": {
+    "postinstall": "prisma skills sync || exit 0"
+  }
+}
