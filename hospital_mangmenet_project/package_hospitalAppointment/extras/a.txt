@@ -1,0 +1,23 @@
+[
+  {
+    "id": "mse9nycf9fw3z",
+    "name": "Apex Medical Institute",
+    "location": "Houston, TX",
+    "emergency": true,
+    "branches": [],
+    "departments": [
+      { "name": "Pediatrics", "doctors": ["btd"] },
+      { "name": "Gynecology", "doctors": ["awre"] }
+    ]
+  },
+  {
+    "id": "mse9sn3q1kcu7",
+    "name": "Sunrise Community Hospital",
+    "location": "Miami, FL",
+    "emergency": true,
+    "branches": ["sfvg"],
+    "departments": [
+      { "name": "Gynecology", "doctors": ["ramesh ji", "svati ji"] }
+    ]
+  }
+]

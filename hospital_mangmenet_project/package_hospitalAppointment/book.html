@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js"></script>
+
+</head>
+
+<body class="h-screen ">
+ <header class="border-b border-slate-100 flex-shrink-0 relative z-50 h-12">
+            <div class="flex items-center justify-between h-full px-3 lg:px-5 gap-2">
+
+            <!-- Left Section: Logo + Selectors -->
+            <div class="flex items-center gap-2 flex-shrink-0">
+
+                <div class="hidden sm:flex items-center gap-2 mr-1">
+                    <div>
+                        <span class="text-md font-extrabold text-slate-900 tracking-tighter">Job Scheduler</span>
+                    </div>
+                </div>
+                <div class="hidden md:block w-px h-6 bg-slate-200 mx-1"></div>
+                <select id="headerHospital"
+                    class="form-select form-input h-8 pl-2.5 text-xs font-medium bg-white border border-slate-200 rounded-lg w-[160px] lg:w-[200px] ">
+                    <option value="">All Hospitals</option>
+                </select>
+                <select id="headerDepartment"
+                    class="form-select form-input h-8 pl-2.5 text-xs font-medium bg-white border border-slate-200 rounded-lg hidden md:block w-[150px] lg:w-[180px]">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+
+            <!-- Center: Search -->
+            <div class="hidden md:flex flex-1 max-w-sm mx-4">
+                <div class="relative w-full group">
+                    <i
+                        class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs group-focus-within:text-brand-500 transition-colors"></i>
+                    <input type="text" id="headerSearch" placeholder="Search doctors, departments..."
+                        class="form-input w-full h-8 pl-9 pr-4 text-xs bg-white border border-slate-200 rounded-lg placeholder:text-slate-300">
+                </div>
+            </div>
+
+            <!-- Right Section: Week + Actions -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <div class="hidden sm:flex items-center bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
+                    <button id="weekPrevBtn"
+                        class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                        aria-label="Previous week">
+                        <i class="fas fa-chevron-left text-[10px]"></i>
+                    </button>
+                    <button id="weekLabelBtn"
+                        class="h-7 px-2.5 flex items-center text-xs font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap">
+                        This Week
+                    </button>
+                    <button id="weekNextBtn"
+                        class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                        aria-label="Next week">
+                        <i class="fas fa-chevron-right text-[10px]"></i>
+                    </button>
+                    <button id="weekTodayBtn"
+                        class="h-7 px-2 text-[10px] font-bold text-brand-600 rounded-md hover:bg-brand-50 transition-colors uppercase tracking-wider">
+                        Today
+                    </button>
+                </div>
+                <button id="mobileSearchBtn"
+                    class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                    <i class="fas fa-magnifying-glass text-xs"></i>
+                </button>
+                <button id="notifBtn"
+                    class="relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                    aria-label="Notifications">
+                    <i class="fas fa-bell text-sm"></i>
+                    <span class="notif-badge" id="notifDot"></span>
+                </button>
+                <button id="profileBtn"
+                    class="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors"
+                    aria-label="Profile menu">
+                    <div class="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center">
+                        <span class="text-[10px] font-extrabold text-brand-700">AD</span>
+                    </div>
+                    <span class="hidden lg:block text-xs font-semibold text-slate-600">Admin</span>
+                    <i class="hidden lg:block fas fa-chevron-down text-[8px] text-slate-300"></i>
+                </button>
+            </div>
+        </div>
+</header>
+
+    <div class="relative w-full h-[calc(100vh-2.3rem)] bg-green-400 flex ">
+        <div class="w-[320px] h-full  bg-blue-300">
+            <div class="border-b border-gray-200 bg-[#FFFFFF] p-2">
+                <h2 class="font-semibold text-shadow-xl">Doctors pool</h2>
+                <p class="text-[12px]">current do.</p>
+            </div>
+            <div class="bg-[#FFFFFF] px-2 p-2 border-b relative">
+                <div class="relative">
+                    <i
+                        class="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
+                    <input type="text" id="poolSearchInput" placeholder="Filter pool..."
+                        class="w-full h-7 pl-8 pr-3 text-[11px] bg-slate-50 border border-slate-200 rounded-lg placeholder:text-slate-300">
+                </div>
+            </div>
+            <div class="bg-[#FFFFFF] border-3 overflow-y-auto h-[calc(100vh-8rem)]" id="pool">
+
+
+            </div>
+        </div>
+        <main class="flex bg-[#F1F4F9] h-full overflow-auto">
+            <div id="container" class="flex px-5"></div>
+
+        </main>
+
+    </div>
+
+    <div id="modalBackdrop"
+        class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+
+        <div id="modalDialog"
+            class="bg-white w-[500px] max-h-[90vh] rounded-2xl shadow-xl overflow-hidden p-2 items-center justify-center overflow-auto">
+
+
+        </div>
+
+    </div>
+
+    </div>
+    <div id="customNotification"
+        class="hidden fixed top-5 right-5 z-[100] w-[320px] rounded-xl shadow-xl overflow-hidden">
+        <div id="notificationContent" class="p-4 text-white">
+            <div class="flex items-start gap-3">
+                <div id="notificationIcon"
+                    class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="min-w-0">
+                    <div id="notificationTitle" class="text-sm font-bold"></div>
+                    <div id="notificationMessage" class="text-[11px] text-white/80 mt-0.5"></div>
+                </div>
+                <button id="notificationClose" class="ml-auto text-white/70 hover:text-white">
+                    <i class="fas fa-xmark text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Aside -->
+    <div id="scheduleAsideOverlay" class="fixed inset-0 bg-black/30 z-[999] hidden">
+    </div>
+
+    <aside id="scheduleAside" class="fixed top-0 right-0 h-full w-[420px] max-w-[95vw] bg-white shadow-2xl z-[1000]
+           translate-x-full transition-transform duration-300 flex flex-col">
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between shrink-0">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">
+                    Doctor Schedule
+                </h3>
+                <p id="scheduleDoctorSubtitle" class="text-[11px] text-slate-400 mt-1">
+                    Schedule details
+                </p>
+            </div>
+
+            <button type="button" id="closeScheduleAside"
+                class="w-8 h-8 rounded-lg hover:bg-slate-200 flex items-center justify-center">
+                <i class="fas fa-xmark text-slate-500"></i>
+            </button>
+        </div>
+
+        <!-- Doctor Info -->
+        <div id="scheduleDoctorInfo" class="p-4 border-b border-slate-100"></div>
+
+        <!-- Schedule -->
+        <div id="scheduleDetails" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+    </aside>
+
+
+<script type="module">
+        const container = document.getElementById("container");
+
+        const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+        const shifts = [
+            {
+                name: "Morning",
+                time: "06:00 - 12:00",
+                icon: 'fa-sun',
+                iconColor: "#f59e0b",
+            },
+            {
+                name: "Afternoon",
+                time: "12:00 - 18:00",
+                icon: 'fa-cloud-sun',
+                iconColor: "#f97316"
+            },
+            {
+                name: "Evening",
+                time: "18:00 - 00:00",
+                icon: 'fa-moon',
+                iconColor: "#6366f1",
+
+            },
+            {
+                name: "Night",
+                time: "00:00 - 06:00",
+                icon: 'fa-star',
+                iconColor: "#334155"
+            }
+        ];
+        
+
+        let currentMonday = getMonday(new Date());
+
+        function getMonday(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+            return d;
+        }
+
+        // function getDoctorDaySchedule(doctor, selectedDate) {
+        //     if (!doctor || !selectedDate) return "maduri dikshit";
+
+        //     const date = new Date(`${selectedDate}T00:00:00`);
+
+        //     const dayName = date.toLocaleDateString("en-US", {
+        //         weekday: "long"
+        //     });
+
+        //     return doctor.schedule?.find(schedule =>
+        //         String(schedule.day).trim().toLowerCase() ===
+        //         dayName.trim().toLowerCase()
+        //     ) || null;
+        // }
+
+        function getDoctorDaySchedule(doctor, selectedDate) {
+            if (!doctor || !selectedDate) {
+                return null;
+            }
+
+            const date = new Date(`${selectedDate}T00:00:00`);
+
+            const dayName = date.toLocaleDateString("en-US", {
+                weekday: "long"
+            });
+
+            console.log("Checking doctor:", doctor.doctorName);
+            console.log("Selected day:", dayName);
+            console.log("Doctor schedule:", doctor.schedule);
+
+            const schedule = Array.isArray(doctor.schedule)
+                ? doctor.schedule
+                : [];
+
+            const daySchedule = schedule.find(item => {
+                const scheduleDay = String(
+                    item.day ??
+                    item.dayName ??
+                    item.weekday ??
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+                return scheduleDay === dayName.toLowerCase();
+            });
+
+            console.log("Matched day schedule:", daySchedule);
+
+            return daySchedule || null;
+        }
+
+        function getScheduleTiming(daySchedule) {
+            if (!daySchedule) {
+                return null;
+            }
+
+            const startTime =
+                daySchedule.timing?.startTime ??
+                daySchedule.startTime ??
+                daySchedule.from ??
+                "";
+
+            const endTime =
+                daySchedule.timing?.endTime ??
+                daySchedule.endTime ??
+                daySchedule.to ??
+                "";
+
+            return {
+                startTime,
+                endTime
+            };
+        }
+
+        function showNotification(type, message) {
+            const notification = document.getElementById("customNotification");
+            const content = document.getElementById("notificationContent");
+            const icon = document.getElementById("notificationIcon");
+            const title = document.getElementById("notificationTitle");
+            const messageText = document.getElementById("notificationMessage");
+
+            notification.classList.remove("hidden");
+
+            if (type === "success") {
+                content.className = "p-4 text-white bg-gradient-to-r from-blue-600 to-cyan-500";
+                icon.innerHTML = `<i class="fas fa-check"></i>`;
+                title.textContent = "Assignment Successful";
+            }
+
+            if (type === "delete") {
+                content.className = "p-4 text-white bg-gradient-to-r from-red-600 to-rose-500";
+                icon.innerHTML = `<i class="fas fa-trash"></i>`;
+                title.textContent = "Assignment Deleted";
+            }
+            if (type === "warning") {
+                content.className = "p-4 text-white bg-gradient-to-r from-red-600 to-blue-500";
+                icon.innerHTML = `<i class="fas fa-calendar-xmark"></i>`;
+                title.textContent = "Doctor Not Available";
+            }
+
+            messageText.textContent = message;
+
+            clearTimeout(window.notificationTimer);
+
+            window.notificationTimer = setTimeout(() => {
+                notification.classList.add("hidden");
+            }, 3000);
+        }
+
+        document.getElementById("notificationClose").addEventListener("click", () => {
+            document.getElementById("customNotification").classList.add("hidden");
+        });
+
+        //         function renderWeek() {
+        //             let html = "";
+
+        //             for (let i = 0; i < 7; i++) {
+        //                 const date = new Date(currentMonday);
+        //                 const today = new Date();
+        //                 date.setDate(currentMonday.getDate() + i);
+
+        //                 const isToday = date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+
+
+        //                 const dayName = DAYS[i];
+        //                 const dayNumber = date.getDate();
+        //                 const month = date.toLocaleString("default", { month: "short" });
+
+        //                 html += `
+        //                     <div class="w-[280px] flex flex-col px-2 space-y-3 py-5 rounded-xl">
+
+        //                         <div class="w-full h-16 rounded-xl bg-[#FEFEFE] shadow flex items-center justify-between py-2 px-3
+        //                         ${isToday ? 'border-2 border-blue-500 bg-blue-50/30' : ''}">
+        //                             <div>
+        //                                 <h2 class="font-bold text-slate-700">${dayName}</h2>
+        //                                 <p class="text-xs text-slate-400">${month} ${dayNumber}</p>
+        //                             </div>
+        //                                 <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shadow-md">
+        //                                         ${dayNumber}
+        //                                     </div>
+        //                         </div>
+
+
+        //     ${shifts.map(shift => {
+        //                     return `
+        //         <div class="bg-[#FFFFFF] rounded-lg cursor-pointer hover:shadow rounded-[inherit]">
+
+        //             <div class="text-xs font-bold text-slate-700 flex bg-[#F8FBFD] justify-between p-1 px-3 rounded-t-[inherit] border border-b">
+        //                <span class="gap-0.5"> 
+        //                     <i class="fas ${shift.icon}" style="color:${shift.iconColor}"></i>
+        //                         ${shift.name}
+        //                 </span> 
+        //                 <div class="text-[11px] text-slate-500">
+        //                     ${shift.time}
+        //                 </div>
+        //             </div>
+        //             <div class="items-center flex flex-col p-2 w-full  rounded-b-[inherit] hover:border-blue-400 hover:border">
+        //                  <div class="text-center h-20">
+        //                     <i class="fas fa-grip-vertical text-sm mb-1 opacity-40"></i>
+        //                     <p class="text-[9px] font-medium">Drop here</p>
+        //                 </div>
+        //             </div>
+        //         </div> `;
+        //                 }).join("")}
+
+
+        // </div>`;
+
+        //             }
+
+        //             container.innerHTML = html;
+
+        //             // Update header label
+        //             document.getElementById("weekLabelBtn").innerText =
+        //                 `${currentMonday.toLocaleString("default", { month: "short" })} ${currentMonday.getDate()} - ${new Date(currentMonday.getTime() + 6 * 86400000).toLocaleString("default", { month: "short" })} ${new Date(currentMonday.getTime() + 6 * 86400000).getDate()}`;
+        //         }
+
+        function renderWeek() {
+            const selectedHospitalId = document.getElementById("headerHospital").value;
+            const selectedDepartmentId = document.getElementById("headerDepartment").value;
+            const assignments = JSON.parse(localStorage.getItem("DoctorAssignments") || "[]");
+
+            let html = "";
+
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(currentMonday);
+                const today = new Date();
+
+                date.setDate(currentMonday.getDate() + i);
+
+                const isToday =
+                    date.getDate() === today.getDate() &&
+                    date.getMonth() === today.getMonth() &&
+                    date.getFullYear() === today.getFullYear();
+
+                const dayName = DAYS[i];
+                const dayNumber = date.getDate();
+                const month = date.toLocaleString("default", { month: "short" });
+
+                const dateString =
+                    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+                html += `
+            <div class="w-[280px] flex flex-col px-2 space-y-3 py-5 rounded-xl">
+                <div class="w-full h-16 rounded-xl bg-[#FEFEFE] shadow flex items-center justify-between py-2 px-3 ${isToday ? "border-2 border-blue-500 bg-blue-50/30" : ""}">
+                    <div>
+                        <h2 class="font-bold text-slate-700">${dayName}</h2>
+                        <p class="text-xs text-slate-400">${month} ${dayNumber}</p>
+                    </div>
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shadow-md">
+                        ${dayNumber}
+                    </div>
+                </div>
+
+                ${shifts.map(shift => {
+                    const shiftAssignments = assignments.filter(assignment => {
+                        const hospitalMatch = !selectedHospitalId || String(assignment.hospitalId) === String(selectedHospitalId);
+                        const departmentMatch = !selectedDepartmentId || String(assignment.departmentId) === String(selectedDepartmentId);
+                        const dateMatch = assignment.date === dateString;
+                        const shiftMatch = String(assignment.shift).trim().toLowerCase() === String(shift.name).trim().toLowerCase();
+
+                        return hospitalMatch && departmentMatch && dateMatch && shiftMatch;
+                    });
+
+                    return `
+                        <div class="bg-[#FFFFFF] rounded-lg cursor-pointer hover:shadow">
+                            <div class="text-xs font-bold text-slate-700 flex bg-[#F8FBFD] justify-between p-1 px-3 rounded-t-[inherit] border border-b">
+                                <span class="gap-0.5">
+                                    <i class="fas ${shift.icon}" style="color:${shift.iconColor}"></i>
+                                    ${shift.name}
+                                </span>
+                                <div class="text-[11px] text-slate-500">
+                                    ${shift.time}
+                                </div>
+                            </div>
+
+                            <div class="items-center flex flex-col p-2 w-full rounded-b-[inherit] min-h-[95px] hover:border-blue-400 hover:border">
+                                ${shiftAssignments.length
+                            ? shiftAssignments.map(assignment => `
+                                        <div class="w-full bg-blue-50 border border-blue-200 rounded-lg p-2 mb-1">
+                                            <div class="flex items-center justify-between">
+                                                <div class="text-[11px] font-bold text-green-800">
+                                                    ${assignment.doctorName}
+                                                </div>
+                                                <i class="fas fa-user-doctor text-[10px] text-green-600"></i>
+                                            </div>
+                                            <div class="text-[9px] text-slate-500 mt-1">
+                                                <i class="fas fa-hospital text-[8px]"></i>
+                                                ${assignment.hospitalName}
+                                            </div>
+                                            <div class="text-[9px] text-slate-500 mt-1">
+                                                <i class="fas fa-building text-[8px]"></i>
+                                                ${assignment.departmentName}
+                                            </div>
+                                            <div class="flex items-center gap-1 text-[9px] text-slate-500 mt-1 justify-between">
+                                                <div>
+                                                    <i class="fas fa-clock text-[8px]"></i>
+                                                ${assignment.startTime} - ${assignment.endTime}     
+                                                </div>
+                                                <div class="flex gap-0.5">
+                                                   <button
+                                                        type="button"
+                                                        data-assignment-id="${assignment.id}"
+                                                        class="editAssignmentBtn p-1 hover:bg-blue-100 rounded-sm">
+                                                        <i class="fa-solid fa-pen-to-square text-blue-500"></i>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        data-assignment-id="${assignment.id}"
+                                                        class="deleteAssignmentBtn hover:bg-red-100 p-1 rounded-sm">
+                                                        <i class="fa fa-trash text-red-500" aria-hidden="true"></i>
+                                                    </button>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join("")
+                            : `
+                                            <div class="text-center h-20 flex flex-col items-center justify-center">
+                                                <i class="fas fa-grip-vertical text-sm mb-1 opacity-40"></i>
+                                                <p class="text-[9px] font-medium">Drop here</p>
+                                            </div>
+                                        `
+                        }
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        `;
+            }
+
+            container.innerHTML = html;
+
+            document.getElementById("weekLabelBtn").innerText =
+                `${currentMonday.toLocaleString("default", { month: "short" })} ${currentMonday.getDate()} - ${new Date(currentMonday.getTime() + 6 * 86400000).toLocaleString("default", { month: "short" })} ${new Date(currentMonday.getTime() + 6 * 86400000).getDate()}`;
+        }
+
+        document.getElementById("weekPrevBtn").addEventListener("click", () => {
+            currentMonday.setDate(currentMonday.getDate() - 7);
+            renderWeek();
+        });
+
+        document.getElementById("weekNextBtn").addEventListener("click", () => {
+            currentMonday.setDate(currentMonday.getDate() + 7);
+            renderWeek();
+        });
+
+
+        document.getElementById("weekTodayBtn").addEventListener("click", () => {
+            currentMonday = getMonday(new Date());
+            renderWeek();
+        });
+
+
+        // Initial load
+        renderWeek();
+
+
+
+        const AdminData = JSON.parse(localStorage.getItem("AdminData") || "[]")
+        let allDoctors = [];
+
+        function prepareDoctors() {
+
+            allDoctors = [];
+            AdminData.forEach(hospital => {
+                hospital.doctors.forEach(doc => {
+                    const dept = hospital.departments.find(
+                        d => d.departmentId === doc.departmentId
+                    );
+                    allDoctors.push({
+                        ...doc,
+                        hospitalName: hospital.name || "hospital",
+                        departmentName: dept ? dept.departmentName : "-"
+                    });
+                });
+            });
+
+        }
+
+
+        function createDoctorCard(doctors = allDoctors) {
+
+            const pool = document.getElementById("pool");
+
+            pool.innerHTML = "";
+
+            doctors.forEach(doc => {
+
+                const card = document.createElement("div");
+
+                card.className =
+                    "bg-white border border-slate-100 rounded-xl p-3 mb-3 w-[300px]";
+
+                card.innerHTML = `
+
+                <div class="flex items-start gap-2.5">
+                    <div class="min-w-0">
+                        <div class="text-sm font-bold text-slate-900 truncate">
+                            ${doc.doctorName}
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">
+                            ${doc.departmentName}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400">
+                    <i class="fas fa-hospital text-[8px]"></i>
+                    <span>
+                        Hospital Name :- ${doc.hospitalName}
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400">
+                    <i class="fas fa-id-card text-[8px]"></i>
+                    <span>
+                        ${doc.doctorId}
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-1.5 mt-2.5">
+                   <button
+                        data-doctor-id="${doc.doctorId}"
+                        data-hospital-id="${doc.hospitalId}"
+                        data-department-id="${doc.departmentId}"
+                        class=" doctorAssignBtn flex-1 h-7 text-[11px] font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 flex items-center justify-center gap-1">
+                        <i class="fas fa-plus text-[8px]"></i>
+                        Assign
+                    </button>
+                    <button
+                        type="button"
+                        data-doctor-id="${doc.doctorId}"
+                        data-hospital-id="${doc.hospitalId}"
+                        data-department-id="${doc.departmentId}"
+                        class="schedule h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-green-600 hover:border-green-300"
+                        title="View Schedule">
+                        <i class="fas fa-calendar-day text-[10px]"></i>
+</button>
+
+                </div>
+
+                `;
+
+                pool.appendChild(card);
+
+            });
+
+        }
+
+        prepareDoctors();
+        createDoctorCard();
+
+
+        console.log(allDoctors)
+
+        // ===============================
+        // FIND DOCTOR
+        // ===============================
+
+
+        document.addEventListener("click", (e) => {
+
+            const assignBtn = e.target.closest(".doctorAssignBtn");
+
+            if (!assignBtn) return;
+
+            const doctorId = assignBtn.dataset.doctorId;
+            const hospitalId = assignBtn.dataset.hospitalId;
+            const departmentId = assignBtn.dataset.departmentId;
+
+            const doctor = allDoctors.find(doc =>
+                doc.doctorId === doctorId &&
+                doc.hospitalId === hospitalId &&
+                doc.departmentId === departmentId
+            );
+
+            if (!doctor) {
+                console.error("Doctor not found");
+                return;
+            }
+
+            const modal = document.getElementById("modalBackdrop");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            const modalDialog = document.getElementById("modalDialog");
+            modalDialog.innerHTML = "";
+
+            const card = document.createElement("div");
+
+            card.innerHTML = `
+        <div class="w-full bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div class="bg-slate-50 border-b border-slate-200 p-4 shrink-0">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">Hospital Assignment</h3>
+                        <p class="text-[11px] text-slate-400 mt-1">Assign doctor to hospital schedule</p>
+                    </div>
+                    <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-hospital text-green-600 text-sm"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 min-h-0 space-y-2 overflow-auto">
+                <div>
+                    <label for="assign-hospital" class="block text-xs font-semibold text-slate-600 mb-1.5">Hospital</label>
+                    <select id="assign-hospital" class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                        <option value="">Select Hospital</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="assign-department" class="block text-xs font-semibold text-slate-600 mb-1.5">Department</label>
+                    <select id="assign-department" class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                        <option value="">Select Department</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="date-picker" class="block text-xs font-semibold text-slate-600 mb-1.5">Date</label>
+                    <input type="date" id="date-picker" 
+                    class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                </div>
+                <div class="flex gap-2">
+                    <div class="flex flex-col w-1/2" required>
+                        <label for="assign-start-time" class="block text-xs font-semibold text-slate-600 mb-1.5">Start Time</label>
+                        <input type="time" id="assign-start-time" class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                    </div>
+                    <div class="flex flex-col w-1/2" required>
+                        <label for="assign-end-time" class="block text-xs font-semibold text-slate-600 mb-1.5">End Time</label>
+                        <input type="time" id="assign-end-time" class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                    </div>
+                </div>
+                <div>
+                    <label for="Shift" class="block text-xs font-semibold text-slate-600 mb-1.5">Shift</label>
+                    <select id="Shift" class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100">
+                        <option value="Morning">Morning (06:00 AM - 12:00 PM)</option>
+                        <option value="Afternoon">Afternoon (12:00 PM - 06:00 PM)</option>
+                        <option value="Evening">Evening (06:00 PM - 12:00 AM)</option>
+                        <option value="Night">Night (12:00 AM - 06:00 AM)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="assignment-note" class="block text-xs font-semibold text-slate-600 mb-1.5">Note</label>
+                    <textarea id="assignment-note" rows="3" placeholder="Add assignment note..." class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg outline-none resize-none focus:border-green-500 focus:ring-2 focus:ring-green-100"></textarea>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" id="cancel-assignment" class="flex-1 h-9 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Cancel</button>
+                    <button type="button" id="save-assignment" class="flex-1 h-9 text-xs font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700">Assign Doctor</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+            modalDialog.appendChild(card);
+
+            const today = new Date().toISOString().split("T")[0];
+            const assignHospital = document.getElementById("assign-hospital");
+            const assignDepartment = document.getElementById("assign-department");
+            const datePicker = document.getElementById("date-picker");
+            const startTimeInput = document.getElementById("assign-start-time");
+            const endTimeInput = document.getElementById("assign-end-time");
+            const shiftInput = document.getElementById("Shift");
+            const noteInput = document.getElementById("assignment-note");
+
+            datePicker.min = today;
+
+            const doctorHospitalIds = allDoctors
+                .filter(doc => doc.doctorId === doctorId)
+                .map(doc => doc.hospitalId);
+
+            const uniqueHospitalIds = [...new Set(doctorHospitalIds)];
+
+            const hospitals = AdminData.filter(hospital =>
+                uniqueHospitalIds.includes(hospital.id)
+            );
+
+            hospitals.forEach(hospital => {
+                const option = document.createElement("option");
+                option.value = hospital.id;
+                option.textContent = hospital.name;
+                assignHospital.appendChild(option);
+            });
+
+            assignHospital.value = hospitalId;
+
+            function loadDepartments(selectedHospitalId) {
+                assignDepartment.innerHTML = `
+            <option value="">Select Department</option>
+        `;
+
+                const doctorDepartments = allDoctors.filter(doc =>
+                    doc.doctorId === doctorId &&
+                    doc.hospitalId === selectedHospitalId
+                );
+
+                doctorDepartments.forEach(doc => {
+                    const option = document.createElement("option");
+                    option.value = doc.departmentId;
+                    option.textContent = doc.departmentName;
+                    assignDepartment.appendChild(option);
+                });
+
+                if (selectedHospitalId === hospitalId) {
+                    assignDepartment.value = departmentId;
+                }
+            }
+
+            function loadDoctorSchedule() {
+                const selectedDate = datePicker.value;
+
+                if (!selectedDate) {
+                    startTimeInput.value = "";
+                    endTimeInput.value = "";
+                    return;
+                }
+
+                const daySchedule = getDoctorDaySchedule(doctor, selectedDate);
+
+                if (!daySchedule) {
+                    startTimeInput.value = "";
+                    endTimeInput.value = "";
+
+                    showNotification(
+                        "warning",
+                        `${doctor.doctorName} is not available on this day.`
+                    );
+
+                    return;
+                }
+
+                const timing = getScheduleTiming(daySchedule);
+
+                if (!timing?.startTime || !timing?.endTime) {
+                    startTimeInput.value = "";
+                    endTimeInput.value = "";
+
+                    showNotification(
+                        "warning",
+                        `${doctor.doctorName} has no timing configured for this day.`
+                    );
+
+                    return;
+                }
+
+                startTimeInput.value = timing.startTime;
+                endTimeInput.value = timing.endTime;
+
+                console.log("Doctor:", doctor.doctorName);
+                console.log("Day schedule:", daySchedule);
+                console.log("Available:", timing.startTime, "-", timing.endTime);
+            }
+
+            loadDepartments(hospitalId);
+
+            datePicker.addEventListener("change", loadDoctorSchedule);
+            loadDoctorSchedule();
+
+            assignHospital.addEventListener("change", () => {
+                loadDepartments(assignHospital.value);
+            });
+
+            document.getElementById("cancel-assignment").addEventListener("click", () => {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                modalDialog.innerHTML = "";
+            });
+
+            // document.getElementById("save-assignment").addEventListener("click", () => {
+            //     const selectedHospital = assignHospital.value;
+            //     const selectedDepartment = assignDepartment.value;
+            //     const selectedDate = datePicker.value;
+            //     const selectedStartTime = startTimeInput.value;
+            //     const selectedEndTime = endTimeInput.value;
+            //     const selectedShift = shiftInput.value;
+            //     const note = noteInput.value;
+
+            //     if (!selectedHospital || !selectedDepartment || !selectedDate || !selectedStartTime || !selectedEndTime) {
+            //         alert("Please fill all required fields.");
+            //         return;
+            //     }
+
+            //     const selectedHospitalData = AdminData.find(
+            //         hospital => hospital.id === selectedHospital
+            //     );
+
+            //     const selectedDoctorData = allDoctors.find(doc =>
+            //         doc.doctorId === doctorId &&
+            //         doc.hospitalId === selectedHospital &&
+            //         doc.departmentId === selectedDepartment
+            //     );
+
+            //     const selectedDateObject = new Date(`${selectedDate}T00:00:00`);
+
+            //     const assignmentData = {
+            //         id: Date.now().toString(),
+            //         doctorId,
+            //         doctorName: doctor.doctorName,
+            //         hospitalId: selectedHospital,
+            //         hospitalName: selectedHospitalData?.name || "",
+            //         departmentId: selectedDepartment,
+            //         departmentName: selectedDoctorData?.departmentName || "",
+            //         date: selectedDate,
+            //         day: selectedDateObject.toLocaleDateString("en-US", {
+            //             weekday: "long"
+            //         }),
+            //         startTime: selectedStartTime,
+            //         endTime: selectedEndTime,
+            //         shift: selectedShift,
+            //         note
+            //     };
+
+            //     const assignments = JSON.parse(
+            //         localStorage.getItem("DoctorAssignments") || "[]"
+            //     );
+
+            //     assignments.push(assignmentData);
+
+            //     localStorage.setItem(
+            //         "DoctorAssignments",
+            //         JSON.stringify(assignments)
+            //     );
+
+            //     console.log("=================================");
+            //     console.log("DOCTOR ASSIGNMENT DATA");
+            //     console.log("=================================");
+            //     console.log(assignmentData);
+
+            //     console.log("=================================");
+            //     console.log("ALL ASSIGNMENTS");
+            //     console.log("=================================");
+            //     console.log(assignments);
+
+            //     modal.classList.add("hidden");
+            //     modal.classList.remove("flex");
+            //     modalDialog.innerHTML = "";
+
+            //     renderWeek();
+            //     showNotification(
+            //         "success",
+            //         `${doctor.doctorName} assigned successfully.`
+            //     );
+
+            // });
+
+            document.getElementById("save-assignment").addEventListener("click", () => {
+                const selectedHospital = assignHospital.value;
+                const selectedDepartment = assignDepartment.value;
+                const selectedDate = datePicker.value;
+                const selectedStartTime = startTimeInput.value;
+                const selectedEndTime = endTimeInput.value;
+                const selectedShift = shiftInput.value;
+                const note = noteInput.value;
+
+                if (!selectedHospital || !selectedDepartment || !selectedDate || !selectedStartTime || !selectedEndTime) {
+                    showNotification("warning", "Please fill all required fields.");
+                    return;
+                }
+                // ?start aur end ka validiation h bhai 
+                if (selectedStartTime >= selectedEndTime) {
+                    showNotification("warning", "End time must be greater than start time.");
+                    return;
+                }
+
+
+                const selectedDateObject = new Date(`${selectedDate}T00:00:00`);
+                const selectedDayName = selectedDateObject.toLocaleDateString("en-US", { weekday: "long" });
+
+                const daySchedule = doctor.schedule?.find(schedule =>
+                    String(schedule.day).trim().toLowerCase() === String(selectedDayName).trim().toLowerCase()
+                );
+
+                if (!daySchedule) {
+                    showNotification("warning", `${doctor.doctorName} is not available on ${selectedDayName}.`);
+                    return;
+                }
+
+                const availableStart = daySchedule.timing?.startTime;
+                const availableEnd = daySchedule.timing?.endTime;
+
+                if (!availableStart || !availableEnd) {
+                    showNotification("warning", `${doctor.doctorName} has no working time configured for ${selectedDayName}.`);
+                    return;
+                }
+
+                if (selectedStartTime < availableStart || selectedEndTime > availableEnd) {
+                    showNotification("warning", `${doctor.doctorName} is available only from ${availableStart} to ${availableEnd}.`);
+                    return;
+                }
+
+                const selectedHospitalData = AdminData.find(hospital =>
+                    String(hospital.id) === String(selectedHospital)
+                );
+
+                if (!selectedHospitalData) {
+                    showNotification("warning", "Selected hospital was not found.");
+                    return;
+                }
+
+                const selectedDoctorData = allDoctors.find(doc =>
+                    String(doc.doctorId) === String(doctorId) &&
+                    String(doc.hospitalId) === String(selectedHospital) &&
+                    String(doc.departmentId) === String(selectedDepartment)
+                );
+
+                if (!selectedDoctorData) {
+                    showNotification("warning", "Doctor is not available in the selected department.");
+                    return;
+                }
+
+                const assignments = JSON.parse(localStorage.getItem("DoctorAssignments") || "[]");
+
+                function isTimeOverlapping(startA, endA, startB, endB) {
+                    return startA < endB && endA > startB;
+                }
+
+                const sameDoctorConflict = assignments.find(assignment => {
+                    const sameDoctor = String(assignment.doctorId) === String(doctorId);
+                    const sameDate = assignment.date === selectedDate;
+
+                    if (!sameDoctor || !sameDate) {
+                        return false;
+                    }
+
+                    return isTimeOverlapping(selectedStartTime, selectedEndTime, assignment.startTime, assignment.endTime);
+                });
+
+                if (sameDoctorConflict) {
+                    showNotification(
+                        "warning",
+                        `${doctor.doctorName} is already assigned from ${sameDoctorConflict.startTime} to ${sameDoctorConflict.endTime} on this day.`
+                    );
+                    return;
+                }
+
+                const differentDoctorConflict = assignments.find(assignment => {
+                    const sameHospital = String(assignment.hospitalId) === String(selectedHospital);
+                    const sameDepartment = String(assignment.departmentId) === String(selectedDepartment);
+                    const sameDate = assignment.date === selectedDate;
+                    const differentDoctor = String(assignment.doctorId) !== String(doctorId);
+
+                    if (!sameHospital || !sameDepartment || !sameDate || !differentDoctor) {
+                        return false;
+                    }
+
+                    return isTimeOverlapping(selectedStartTime, selectedEndTime, assignment.startTime, assignment.endTime);
+                });
+
+                if (differentDoctorConflict) {
+                    showNotification(
+                        "warning",
+                        `This slot is already occupied by ${differentDoctorConflict.doctorName} from ${differentDoctorConflict.startTime} to ${differentDoctorConflict.endTime}.`
+                    );
+                    return;
+                }
+
+                const assignmentData = {
+                    id: Date.now().toString(),
+                    doctorId,
+                    doctorName: doctor.doctorName,
+                    hospitalId: selectedHospital,
+                    hospitalName: selectedHospitalData.name || "",
+                    departmentId: selectedDepartment,
+                    departmentName: selectedDoctorData.departmentName || "",
+                    date: selectedDate,
+                    day: selectedDayName,
+                    startTime: selectedStartTime,
+                    endTime: selectedEndTime,
+                    shift: selectedShift,
+                    note
+                };
+
+                assignments.push(assignmentData);
+                localStorage.setItem("DoctorAssignments", JSON.stringify(assignments));
+
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                modalDialog.innerHTML = "";
+
+                renderWeek();
+                showNotification(
+                    "success",
+                    `${doctor.doctorName} assigned successfully from ${selectedStartTime} to ${selectedEndTime}.`
+                );
+
+                // =========================================
+                // 18. DEBUG
+                // =========================================
+
+                // console.log("=================================");
+                // console.log("NEW DOCTOR ASSIGNMENT");
+                // console.log("=================================");
+                // console.log(assignmentData);
+
+                // console.log("=================================");
+                // console.log("ALL ASSIGNMENTS");
+                // console.log("=================================");
+                // console.log(assignments);
+            });
+
+        });
+
+
+        const scheduleAside = document.getElementById("scheduleAside");
+        const scheduleAsideOverlay = document.getElementById("scheduleAsideOverlay");
+        const closeScheduleAside = document.getElementById("closeScheduleAside");
+        const scheduleDoctorInfo = document.getElementById("scheduleDoctorInfo");
+        const scheduleDetails = document.getElementById("scheduleDetails");
+        const scheduleDoctorSubtitle = document.getElementById("scheduleDoctorSubtitle");
+
+
+    //     function openScheduleAside(doctor) {
+
+    //         if (!doctor) {
+    //             console.error("Doctor not found");
+    //             return;
+    //         }
+    //         scheduleDoctorSubtitle.textContent =
+    //             `${doctor.hospitalName || "-"} --------- ${doctor.departmentName || "-"}`;
+
+    //         scheduleDoctorInfo.innerHTML = `
+    //     <div class="flex items-center gap-3">
+
+    //         <div class="w-11 h-11 rounded-full bg-green-100
+    //                     flex items-center justify-center shrink-0">
+    //             <i class="fas fa-user-doctor text-green-600"></i>
+    //         </div>
+
+    //         <div class="min-w-0">
+    //             <h4 class="text-sm font-bold text-slate-800 truncate">
+    //                 ${doctor.doctorName || "-"}
+    //             </h4>
+
+    //             <p class="text-[10px] text-slate-400 mt-0.5">
+    //                 Doctor ID: ${doctor.doctorId || "-"}
+    //             </p>
+
+    //             <p class="text-[10px] text-slate-400 mt-0.5">
+    //                 ${doctor.departmentName || "-"}
+    //             </p>
+    //         </div>
+
+    //     </div>
+
+    //     <div class="grid grid-cols-2 gap-2 mt-4">
+
+    //         <div class="bg-slate-50 rounded-lg p-2.5">
+    //             <div class="text-[9px] text-slate-400">
+    //                 Hospital hai bhai ye to naam niche likha hai 
+    //             </div>
+    //             <div class="text-[11px] font-semibold text-slate-700 mt-1">
+    //                 ${doctor.hospitalName || "-"}
+    //             </div>
+    //         </div>
+
+    //         <div class="bg-slate-50 rounded-lg p-2.5">
+    //             <div class="text-[9px] text-slate-400">
+    //                 Department
+    //             </div>
+    //             <div class="text-[11px] font-semibold text-slate-700 mt-1">
+    //                 ${doctor.departmentName || "-"}
+    //             </div>
+    //         </div>
+
+    //     </div>
+    // `;
+
+    //         const schedule = Array.isArray(doctor.schedule)
+    //             ? doctor.schedule
+    //             : [];
+
+    //             if (!schedule.length) {
+
+    //             scheduleDetails.innerHTML = `
+    //         <div class="flex flex-col items-center justify-center
+    //                     text-center py-16">
+
+    //             <div class="w-12 h-12 rounded-full bg-red-100
+    //                         flex items-center justify-center mb-3">
+
+    //                 <i class="fas fa-calendar-xmark text-red-500"></i>
+
+    //             </div>
+
+    //             <h4 class="text-sm font-bold text-slate-700">
+    //                 No Schedule Available
+    //             </h4>
+
+    //             <p class="text-[10px] text-slate-400 mt-1">
+    //                 No working schedule has been configured
+    //                 for this doctor.
+    //             </p>
+
+    //         </div>
+    //     `;
+
+    //         } else {
+
+    //             const orderedDays = [
+    //                 "Monday",
+    //                 "Tuesday",
+    //                 "Wednesday",
+    //                 "Thursday",
+    //                 "Friday",
+    //                 "Saturday",
+    //                 "Sunday"
+    //             ];
+
+    //             scheduleDetails.innerHTML = orderedDays.map(day => {
+    //                 const daySchedule = schedule.find(item => {
+    //                     const scheduleDay = String(
+    //                         item.day ??
+    //                         item.dayName ??
+    //                         item.weekday ??
+    //                         ""
+    //                     ).trim().toLowerCase();
+
+    //                     return scheduleDay === day.toLowerCase();
+    //                 });
+
+    //                 // if (!daySchedule) {
+    //                 //     return `
+    //                 //         <div class="border border-red-200 rounded-xl p-3 bg-red-50">
+    //                 //             <div class="flex items-center justify-between">
+    //                 //                 <div class="flex items-center gap-2">
+    //                 //                     <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
+    //                 //                         <i class="fas fa-calendar-xmark text-red-500 text-xs"></i>
+    //                 //                     </div>
+    //                 //                     <div>
+    //                 //                         <div class="text-xs font-bold text-slate-700">${day}</div>
+    //                 //                         <div class="text-[9px] text-red-500">Doctor is not available</div>
+    //                 //                     </div>
+    //                 //                 </div>
+    //                 //                 <span class="text-[9px] font-bold px-2 py-1 rounded-full bg-red-100 text-red-600">
+    //                 //                     NOT AVAILABLE
+    //                 //                 </span>
+    //                 //             </div>
+    //                 //             <div class="mt-3 px-3 py-2 bg-white rounded-lg border border-red-100">
+    //                 //                 <div class="flex items-center gap-2">
+    //                 //                     <i class="fas fa-circle-xmark text-red-500 text-[10px]"></i>
+    //                 //                     <span class="text-[10px] font-medium text-red-600">
+    //                 //                         No working hours configured for ${day}
+    //                 //                     </span>
+    //                 //                 </div>
+    //                 //             </div>
+    //                 //         </div>
+    //                 //     `;
+    //                 // }
+
+    //                 const startTime =
+    //                     daySchedule.timing?.startTime ??
+    //                     daySchedule.startTime ??
+    //                     daySchedule.from ??
+    //                     "";
+
+    //                 const endTime =
+    //                     daySchedule.timing?.endTime ??
+    //                     daySchedule.endTime ??
+    //                     daySchedule.to ??
+    //                     "";
+
+    //                 return `
+    //     <div class="border border-green-200 rounded-xl p-3 bg-green-50/40">
+    //         <div class="flex items-center justify-between">
+    //             <div class="flex items-center gap-2">
+    //                 <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+    //                     <i class="fas fa-calendar-check text-green-600 text-xs"></i>
+    //                 </div>
+    //                 <div>
+    //                     <div class="text-xs font-bold text-slate-700">${day}</div>
+    //                     <div class="text-[9px] text-green-600">Available</div>
+    //                 </div>
+    //             </div>
+    //             <span class="text-[9px] font-bold px-2 py-1 rounded-full bg-green-100 text-green-600">
+    //                 AVAILABLE
+    //             </span>
+    //         </div>
+
+    //         <div class="grid grid-cols-2 gap-2 mt-3">
+    //             <div class="bg-white border border-green-100 rounded-lg p-2">
+    //                 <div class="text-[9px] text-slate-400">Start Time</div>
+    //                 <div class="flex items-center gap-1 mt-1">
+    //                     <i class="fas fa-clock text-green-500 text-[9px]"></i>
+    //                     <span class="text-[11px] font-bold text-slate-700">
+    //                         ${startTime || "--"}
+    //                     </span>
+    //                 </div>
+    //             </div>
+
+    //             <div class="bg-white border border-green-100 rounded-lg p-2">
+    //                 <div class="text-[9px] text-slate-400">End Time</div>
+    //                 <div class="flex items-center gap-1 mt-1">
+    //                     <i class="fas fa-clock text-red-400 text-[9px]"></i>
+    //                     <span class="text-[11px] font-bold text-slate-700">
+    //                         ${endTime || "--"}
+    //                     </span>
+    //                 </div>
+    //             </div>
+    //         </div>
+
+    //         <div class="mt-2 px-2.5 py-2 bg-white rounded-lg border border-green-100">
+    //             <div class="flex items-center gap-2">
+    //                 <i class="fas fa-business-time text-green-500 text-[10px]"></i>
+    //                 <span class="text-[10px] text-slate-500">Working Hours</span>
+    //                 <span class="ml-auto text-[10px] font-bold text-slate-700">
+    //                     ${startTime || "--"} - ${endTime || "--"}
+    //                 </span>
+    //             </div>
+    //         </div>
+    //     </div>
+    // `;
+    //             }).join("");
+    //         }
+
+
+    //         scheduleAsideOverlay.classList.remove("hidden");
+
+    //         requestAnimationFrame(() => {
+    //             scheduleAside.classList.remove("translate-x-full");
+    //         });
+    //     }
+
+      
+        function openScheduleAside(doctor) {
+    if (!doctor) {
+        console.error("Doctor not found");
+        return;
+    }
+
+    scheduleDoctorSubtitle.textContent =
+        `${doctor.hospitalName || "-"} --------- ${doctor.departmentName || "-"}`;
+
+    scheduleDoctorInfo.innerHTML = `
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-user-doctor text-green-600"></i>
+            </div>
+            <div class="min-w-0">
+                <h4 class="text-sm font-bold text-slate-800 truncate">${doctor.doctorName || "-"}</h4>
+                <p class="text-[10px] text-slate-400 mt-0.5">Doctor ID: ${doctor.doctorId || "-"}</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">${doctor.departmentName || "-"}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-4">
+            <div class="bg-slate-50 rounded-lg p-2.5">
+                <div class="text-[9px] text-slate-400">Hospital</div>
+                <div class="text-[11px] font-semibold text-slate-700 mt-1">${doctor.hospitalName || "-"}</div>
+            </div>
+            <div class="bg-slate-50 rounded-lg p-2.5">
+                <div class="text-[9px] text-slate-400">Department</div>
+                <div class="text-[11px] font-semibold text-slate-700 mt-1">${doctor.departmentName || "-"}</div>
+            </div>
+        </div>
+    `;
+
+    const schedule = Array.isArray(doctor.schedule)
+        ? doctor.schedule
+        : [];
+
+    if (!schedule.length) {
+        scheduleDetails.innerHTML = `
+            <div class="flex flex-col items-center justify-center text-center py-16">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-3">
+                    <i class="fas fa-calendar-xmark text-red-500"></i>
+                </div>
+                <h4 class="text-sm font-bold text-slate-700">No Schedule Available</h4>
+                <p class="text-[10px] text-slate-400 mt-1">
+                    No working schedule has been configured for this doctor.
+                </p>
+            </div>
+        `;
+    } else {
+        const orderedDays = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+        scheduleDetails.innerHTML = orderedDays.map(day => {
+            const daySchedule = schedule.find(item => {
+                const scheduleDay = String( item?.day ?? item?.dayName ?? item?.weekday ?? "").trim().toLowerCase();
+                return scheduleDay === day.toLowerCase();
+            });
+
+            /*
+             * IMPORTANT:
+             * Day milna = automatically AVAILABLE nahi hai.
+             *
+             * Pehle day match hoga.
+             * Phir us object ki `available` value check hogi.
+             */
+            const availableValue = daySchedule?.available;
+
+            const isAvailable = availableValue === true || String(availableValue).trim().toLowerCase() === "true" || String(availableValue).trim().toLowerCase() === "available"|| String(availableValue).trim().toLowerCase() === "bhai milega";
+            const startTime = daySchedule?.timing?.startTime ?? daySchedule?.startTime ?? daySchedule?.from ?? "";
+
+            const endTime =
+                daySchedule?.timing?.endTime ??
+                daySchedule?.endTime ??
+                daySchedule?.to ??
+                "";
+
+            if (!isAvailable) {
+                return `
+                    <div class="border border-blue-200 rounded-xl p-3 bg-blue-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <i class="fas fa-calendar-xmark text-blue-500 text-xs"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-700">${day}</div>
+                                    <div class="text-[12px] text-red-500">Doctor is not available</div>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-bold px-2 py-1 rounded-full bg-red-100 text-red-600">
+                                NOT AVAILABLE
+                            </span>
+                        </div>
+
+                        <div class="mt-3 px-3 py-2 bg-white rounded-lg border border-red-500">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-circle-xmark text-red-500 text-[10px]"></i>
+                                <span class="text-[10px] font-medium text-red-600">
+                                    No working hours for ${day}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="border border-green-200 rounded-xl p-3 bg-green-50/40">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
+                                <i class="fas fa-calendar-check text-green-600 text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-slate-700">${day}</div>
+                                <div class="text-[9px] text-green-600">Available</div>
+                            </div>
+                        </div>
+                        <span class="text-[9px] font-bold px-2 py-1 rounded-full bg-green-100 text-green-600">
+                            AVAILABLE
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 mt-3">
+                        <div class="bg-white border flex items-end gap-2 justify-start border-green-100 rounded-lg p-2">
+                            <div class="text-[14px] text-slate-400">Start Time</div>
+                            <div class="flex items-center gap-1 mt-1">
+                                <span class="text-[14px] font-bold text-slate-700">
+                                    ${startTime || "--"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border flex items-end gap-2 justify-start border-green-100 rounded-lg p-2">
+                            <div class="text-[14px] text-slate-400">End Time</div>
+                            <div class="flex items-center gap-1 mt-1">
+                                <span class="text-[14px] font-bold text-slate-700">
+                                    ${endTime || "--"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 px-2.5 py-2 bg-white rounded-lg border border-green-100">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-medium text-slate-500">Working Hours</span>
+                            <span class="ml-auto text-[10px] font-bold text-slate-700">
+                                ${startTime || "--"} - ${endTime || "--"}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        
+        }).join("");
+    }
+
+    scheduleAsideOverlay.classList.remove("hidden");
+
+    requestAnimationFrame(() => {
+        scheduleAside.classList.remove("translate-x-full");
+    });
+}
+
+        function closeScheduleDrawer() {
+            scheduleAside.classList.add("translate-x-full");
+            setTimeout(() => {
+                scheduleAsideOverlay.classList.add("hidden");
+            }, 300);
+        }
+
+        document.addEventListener("click", (e) => {
+
+            const scheduleBtn = e.target.closest(".schedule");
+
+            if (!scheduleBtn) return;
+
+
+            const doctorId = scheduleBtn.dataset.doctorId;
+            const hospitalId = scheduleBtn.dataset.hospitalId;
+            const departmentId = scheduleBtn.dataset.departmentId;
+
+
+            const doctor = allDoctors.find(doc =>
+                String(doc.doctorId) === String(doctorId) &&
+                String(doc.hospitalId) === String(hospitalId) &&
+                String(doc.departmentId) === String(departmentId)
+            );
+
+
+            if (!doctor) {
+                console.error("Doctor not found:", {
+                    doctorId,
+                    hospitalId,
+                    departmentId
+                });
+
+                return;
+            }
+
+
+            openScheduleAside(doctor);
+        });
+
+        closeScheduleAside.addEventListener("click", closeScheduleDrawer);
+
+        scheduleAsideOverlay.addEventListener("click", closeScheduleDrawer);
+
+
+
+
+
+        const modal = document.getElementById("modalBackdrop");
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+            }
+        })
+
+
+
+        const doctorSearch = document.getElementById("poolSearchInput");
+
+        doctorSearch.addEventListener("input", (e) => {
+
+            const search = e.target.value.trim().toLowerCase();
+
+            const filteredDoctors = allDoctors.filter(doc => {
+                return (
+                    doc.doctorName.toLowerCase().includes(search) || doc.doctorId.toLowerCase().includes(search) || doc.departmentName.toLowerCase().includes(search) || doc.hospitalName.toLowerCase().includes(search)
+                );
+            })
+
+
+            createDoctorCard(filteredDoctors)
+
+        });
+
+        const headerHospital = document.getElementById('headerHospital');
+        const headerDepartment = document.getElementById("headerDepartment");
+
+        AdminData.forEach(hospital => {
+            const option = document.createElement("option")
+            option.value = hospital.id;
+            option.textContent = hospital.name;
+            headerHospital.appendChild(option)
+        })
+
+
+        //     const hospitalId = headerHospital.value;
+        //     headerDepartment.innerHTML = `<option value="">All Departments</option>`;
+
+        //     AdminData.forEach(hospital => {
+
+        //         if (hospital.id === hospitalId) {
+        //             hospital.departments.forEach(dept => {
+        //                 const option = document.createElement("option");
+        //                 option.value = dept.departmentId;
+        //                 option.textContent = dept.departmentName;
+        //                 headerDepartment.appendChild(option);
+        //             });
+        //         }
+        //     });
+
+        //     const filteredDoctors = hospitalId ? allDoctors.filter(doc => doc.hospitalId === hospitalId) : allDoctors;
+
+        //     createDoctorCard(filteredDoctors);
+        //     renderWeek();
+
+        // });
+
+        // headerDepartment.addEventListener('change', () => {
+        //     const hospitalId = headerHospital.value;
+        //     const departmentId = headerDepartment.value;
+
+        //     const filteredDoctors = allDoctors.filter(doc => {
+
+        //         return (
+        //             (!hospitalId || doc.hospitalId === hospitalId) &&
+        //             (!departmentId || doc.departmentId === departmentId)
+        //         );
+
+        //     });
+        //     createDoctorCard(filteredDoctors);
+        //     renderWeek();
+        // })
+
+        headerHospital.addEventListener("change", () => {
+            const hospitalId = headerHospital.value;
+
+            headerDepartment.innerHTML = `<option value="">All Departments</option>`;
+
+            AdminData.forEach(hospital => {
+                if (!hospitalId || hospital.id === hospitalId) {
+                    hospital.departments.forEach(dept => {
+                        const alreadyExists = [...headerDepartment.options].some(
+                            option => option.value === dept.departmentId
+                        );
+
+                        if (!alreadyExists) {
+                            const option = document.createElement("option");
+                            option.value = dept.departmentId;
+                            option.textContent = dept.departmentName;
+                            headerDepartment.appendChild(option);
+                        }
+                    });
+                }
+            });
+
+            const filteredDoctors = hospitalId
+                ? allDoctors.filter(doc => doc.hospitalId === hospitalId)
+                : allDoctors;
+
+            createDoctorCard(filteredDoctors);
+            renderWeek();
+        });
+
+        headerDepartment.addEventListener("change", () => {
+            const hospitalId = headerHospital.value;
+            const departmentId = headerDepartment.value;
+
+            const filteredDoctors = allDoctors.filter(doc => {
+                return (
+                    (!hospitalId || String(doc.hospitalId) === String(hospitalId)) &&
+                    (!departmentId || String(doc.departmentId) === String(departmentId))
+                );
+            });
+
+            createDoctorCard(filteredDoctors);
+            renderWeek();
+        });
+
+        document.addEventListener("click", (e) => {
+            const deleteBtn = e.target.closest(".deleteAssignmentBtn");
+
+            if (!deleteBtn) return;
+
+            const assignmentId = deleteBtn.dataset.assignmentId;
+
+            const assignments = JSON.parse(
+                localStorage.getItem("DoctorAssignments") || "[]"
+            );
+
+            const assignment = assignments.find(
+                item => item.id === assignmentId
+            );
+
+            if (!assignment) return;
+
+            const modal = document.getElementById("modalBackdrop");
+            const modalDialog = document.getElementById("modalDialog");
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            modalDialog.innerHTML = `
+        <div class="bg-white rounded-xl p-5">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                    <i class="fas fa-trash text-red-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">
+                        Delete Assignment
+                    </h3>
+                    <p class="text-[11px] text-slate-400">
+                        This action cannot be undone.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 rounded-lg p-3 mb-4">
+                <p class="text-xs font-semibold text-slate-700">
+                    ${assignment.doctorName}
+                </p>
+                <p class="text-[10px] text-slate-500 mt-1">
+                    ${assignment.hospitalName} · ${assignment.departmentName}
+                </p>
+                <p class="text-[10px] text-slate-500 mt-1">
+                    ${assignment.date} · ${assignment.shift}
+                </p>
+            </div>
+
+            <div class="flex gap-2">
+                <button
+                    type="button"
+                    id="cancelDelete"
+                    class="flex-1 h-9 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
+                    Cancel
+                </button>
+
+                <button
+                    type="button"
+                    id="confirmDelete"
+                    data-assignment-id="${assignmentId}"
+                    class="flex-1 h-9 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700">
+                    Delete
+                </button>
+            </div>
+        </div>
+    `;
+
+            document.getElementById("cancelDelete").addEventListener("click", () => {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                modalDialog.innerHTML = "";
+            });
+
+            document.getElementById("confirmDelete").addEventListener("click", () => {
+                const updatedAssignments = assignments.filter(
+                    item => item.id !== assignmentId
+                );
+
+                localStorage.setItem("DoctorAssignments", JSON.stringify(updatedAssignments));
+
+
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                modalDialog.innerHTML = "";
+
+                renderWeek();
+
+                showNotification(
+                    "delete",
+                    `${assignment.doctorName} assignment deleted successfully.`
+                );
+            });
+        });
+
+        document.addEventListener("click", (e) => {
+            const editBtn = e.target.closest(".editAssignmentBtn");
+
+            if (!editBtn) return;
+
+            const assignmentId = editBtn.dataset.assignmentId;
+
+            const assignments = JSON.parse(
+                localStorage.getItem("DoctorAssignments") || "[]"
+            );
+
+            const assignment = assignments.find(
+                item => item.id === assignmentId
+            );
+
+            if (!assignment) return;
+
+            const doctor = allDoctors.find(doc =>
+                doc.doctorId === assignment.doctorId
+            );
+
+            if (!doctor) {
+                console.error("Doctor not found");
+                return;
+            }
+
+            openEditAssignmentModal(assignment, doctor);
+        });
+
+        function openEditAssignmentModal(assignment, doctor) {
+            const modal = document.getElementById("modalBackdrop");
+            const modalDialog = document.getElementById("modalDialog");
+
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+
+            modalDialog.innerHTML = "";
+
+            const card = document.createElement("div");
+
+            card.innerHTML = `
+        <div class="w-full bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div class="bg-slate-50 border-b border-slate-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-2xl font-bold text-slate-800">
+                            Edit Assignment
+                        </h3>
+                        <p class="text-[11px] text-slate-400 mt-1">
+                            Update doctor hospital schedule
+                        </p>
+                    </div>
+
+                    <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-pen text-blue-600 text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 space-y-2 overflow-auto">
+
+                <div>
+                    <label
+                        for="edit-hospital"
+                        class="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Hospital
+                    </label>
+
+                    <select
+                        id="edit-hospital"
+                        class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg">
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        for="edit-department"
+                        class="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Department
+                    </label>
+
+                    <select
+                        id="edit-department"
+                        class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg">
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        for="edit-date"
+                        class="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="edit-date"
+                        class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg">
+                </div>
+
+                <div class="flex gap-2">
+
+                    <div class="flex flex-col w-1/2">
+                        <label
+                            for="edit-start-time"
+                            class="block text-xs font-semibold text-slate-600 mb-1.5">
+                            Start Time
+                        </label>
+
+                        <input
+                            type="time"
+                            id="edit-start-time"
+                            class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg">
+                    </div>
+
+                    <div class="flex flex-col w-1/2">
+                        <label
+                            for="edit-end-time"
+                            class="block text-xs font-semibold text-slate-600 mb-1.5">
+                            End Time
+                        </label>
+
+                        <input
+                            type="time"
+                            id="edit-end-time"
+                            class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg">
+                    </div>
+
+                </div>
+
+                <div>
+                    <label
+                        for="edit-shift"
+                        class="block text-xs font-semibold text-slate-600 mb-1.5">
+                        Shift
+                    </label>
+
+                    <select
+                        id="edit-shift"
+                        class="w-full h-9 px-3 text-xs bg-white border border-slate-200 rounded-lg">
+
+                        <option value="Morning">
+                            Morning (06:00 AM - 12:00 PM)
+                        </option>
+
+                        <option value="Afternoon">
+                            Afternoon (12:00 PM - 06:00 PM)
+                        </option>
+
+                        <option value="Evening">
+                            Evening (06:00 PM - 12:00 AM)
+                        </option>
+
+                        <option value="Night">
+                            Night (12:00 AM - 06:00 AM)
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+
+                    <button
+                        type="button"
+                        id="cancelEdit"
+                        class="flex-1 h-9 text-xs font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        id="updateAssignment"
+                        class="flex-1 h-9 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        Update Assignment
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+    `;
+
+            modalDialog.appendChild(card);
+
+            const editHospital = document.getElementById("edit-hospital");
+            const editDepartment = document.getElementById("edit-department");
+            const editDate = document.getElementById("edit-date");
+            const editStartTime = document.getElementById("edit-start-time");
+            const editEndTime = document.getElementById("edit-end-time");
+            const editShift = document.getElementById("edit-shift");
+
+            const doctorHospitals = allDoctors.filter(
+                doc => doc.doctorId === assignment.doctorId
+            );
+
+            const hospitalIds = [];
+
+            doctorHospitals.forEach(doc => {
+                if (!hospitalIds.includes(doc.hospitalId)) {
+                    hospitalIds.push(doc.hospitalId);
+                }
+            });
+
+            hospitalIds.forEach(hospitalId => {
+                const hospital = AdminData.find(
+                    item => item.id === hospitalId
+                );
+
+                if (!hospital) return;
+
+                const option = document.createElement("option");
+                option.value = hospital.id;
+                option.textContent = hospital.name;
+
+                editHospital.appendChild(option);
+            });
+
+            editHospital.value = assignment.hospitalId;
+
+            function loadEditDepartments(hospitalId) {
+                editDepartment.innerHTML = "";
+
+                const doctorDepartments = allDoctors.filter(doc =>
+                    doc.doctorId === assignment.doctorId &&
+                    String(doc.hospitalId) === String(hospitalId)
+                );
+
+                doctorDepartments.forEach(doc => {
+                    const option = document.createElement("option");
+                    option.value = doc.departmentId;
+                    option.textContent = doc.departmentName;
+
+                    editDepartment.appendChild(option);
+                });
+
+                editDepartment.value = assignment.departmentId;
+            }
+
+            loadEditDepartments(assignment.hospitalId);
+
+            editHospital.addEventListener("change", () => {
+                loadEditDepartments(editHospital.value);
+            });
+
+            editDate.value = assignment.date;
+            editStartTime.value = assignment.startTime;
+            editEndTime.value = assignment.endTime;
+            editShift.value = assignment.shift;
+
+            document.getElementById("cancelEdit").addEventListener("click", () => {
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                modalDialog.innerHTML = "";
+            });
+
+            document.getElementById("updateAssignment").addEventListener("click", () => {
+                const selectedHospital = editHospital.value;
+                const selectedDepartment = editDepartment.value;
+                const selectedDate = editDate.value;
+                const selectedStartTime = editStartTime.value;
+                const selectedEndTime = editEndTime.value;
+                const selectedShift = editShift.value;
+
+                if (!selectedHospital || !selectedDepartment || !selectedDate || !selectedStartTime || !selectedEndTime) {
+                    alert("Please fill all required fields.");
+                    return;
+                }
+
+                const selectedHospitalData = AdminData.find(
+                    hospital => hospital.id === selectedHospital
+                );
+
+                const selectedDoctorData = allDoctors.find(doc =>
+                    doc.doctorId === assignment.doctorId &&
+                    String(doc.hospitalId) === String(selectedHospital) &&
+                    String(doc.departmentId) === String(selectedDepartment)
+                );
+
+                const selectedDateObject = new Date(`${selectedDate}T00:00:00`);
+                const assignments = JSON.parse(localStorage.getItem("DoctorAssignments") || "[]");
+                const index = assignments.findIndex(item => item.id === assignment.id);
+
+                if (index === -1) return;
+
+                assignments[index] = {
+                    ...assignments[index],
+                    hospitalId: selectedHospital,
+                    hospitalName: selectedHospitalData?.name || "",
+                    departmentId: selectedDepartment,
+                    departmentName: selectedDoctorData?.departmentName || "",
+                    date: selectedDate,
+                    day: selectedDateObject.toLocaleDateString(
+                        "en-US",
+                        { weekday: "long" }
+                    ),
+                    startTime: selectedStartTime,
+                    endTime: selectedEndTime,
+                    shift: selectedShift
+                };
+
+                localStorage.setItem(
+                    "DoctorAssignments",
+                    JSON.stringify(assignments)
+                );
+
+                modal.classList.add("hidden");
+                modal.classList.remove("flex");
+                modalDialog.innerHTML = "";
+
+                renderWeek();
+
+                showNotification(
+                    "success",
+                    `${assignment.doctorName} assignment updated successfully.`
+                );
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,2600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0',
+                            300: '#6ee7b7', 400: '#34d399', 500: '#10b981',
+                            600: '#059669', 700: '#047857', 800: '#065f46',
+                            900: '#064e3b', 950: '#022c22'
+                        },
+                        surface: {
+                            50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0',
+                            300: '#cbd5e1', 400: '#94a3b8', 500: '#64748b',
+                            600: '#475569', 700: '#334155', 800: '#1e293b',
+                            900: '#0f172a'
+                        }
+                    },
+                    fontFamily: {
+                        display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1fae5; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6ee7b7; }
+
+        /* Page transitions */
+        .page { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .page.active { display: block; opacity: 1; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            padding: 12px 20px; border-radius: 12px; color: #fff; font-size: 13px; font-weight: 600;
+            box-shadow: 0 8px 24px -4px rgba(0,0,0,0.2);
+            transform: translateX(120%); opacity: 0; transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
+            max-width: 360px;
+        }
+        .toast.show { transform: translateX(0); opacity: 1; }
+        .toast-success { background: #059669; }
+        .toast-error { background: #dc2626; }
+        .toast-info { background: #2563eb; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 8000; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal-box {
+            background: #fff; border-radius: 20px; width: 100%; max-width: 680px; max-height: 90vh;
+            overflow-y: auto; box-shadow: 0 24px 48px -12px rgba(0,0,0,0.25);
+            transform: scale(0.92) translateY(16px); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+
+        /* Card hover */
+        .card-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 32px -8px rgba(0,0,0,0.15); }
+
+        /* Nav tab indicator */
+        .nav-tab { position: relative; transition: color 0.2s ease; }
+        .nav-tab.active { color: #fff; }
+        .nav-tab.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+            width: 24px; height: 3px; background: #34d399; border-radius: 10px;
+        }
+
+        /* Form inputs */
+        .form-input {
+            width: 100%; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px 14px;
+            font-size: 14px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            background: #fff; color: #1e293b;
+        }
+        .form-input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.12); }
+        .form-input::placeholder { color: #94a3b8; }
+        .form-input:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+
+        select.form-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+        }
+
+        /* Dept card in admin */
+        .dept-card { border: 1.5px solid #334155; border-radius: 16px; padding: 16px; background: #1e293b; }
+        .doctor-chip {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+            background: #334155; border-radius: 20px; font-size: 12px; color: #d1fae5;
+        }
+        .doctor-chip button { cursor: pointer; color: #94a3b8; transition: color 0.15s; }
+        .doctor-chip button:hover { color: #f87171; }
+
+        /* Hospital preview card */
+        .preview-card {
+            border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 14px;
+            transition: border-color 0.2s;
+        }
+        .preview-card:hover { border-color: #a7f3d0; }
+
+        /* Branch chip */
+        .branch-chip {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+            background: #334155; border-radius: 20px; font-size: 13px; color: #d1fae5;
+        }
+        .branch-chip button { cursor: pointer; color: #94a3b8; transition: color 0.15s; }
+        .branch-chip button:hover { color: #f87171; }
+
+        /* Booking hospital card image placeholder */
+        .hosp-img-placeholder {
+            height: 180px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+            color: #047857; font-weight: 700; font-size: 14px; letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-surface-100">
+
+    <!-- ============================================================
+         TOAST CONTAINER
+         ============================================================ -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ============================================================
+         NAVIGATION BAR
+         ============================================================ -->
+    <nav class="sticky top-0 z-50 bg-brand-700 shadow-lg shadow-brand-900/20">
+        <div class="max-w-[1440px] mx-auto px-6 py-3 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
+                    <i class="fas fa-hospital text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-white font-extrabold text-lg leading-tight tracking-tight">MedBook</h1>
+                    <p class="text-brand-200 text-[11px] font-medium">Hospital Booking System</p>
+                </div>
+            </div>
+
+            <!-- Nav Tabs -->
+            <div class="flex items-center gap-1 bg-brand-800/60 rounded-xl p-1">
+                <button class="nav-tab active px-4 py-2 rounded-lg text-sm font-semibold text-brand-300 hover:text-white transition-colors" data-page="booking">
+                    <i class="fas fa-calendar-check mr-1.5 text-xs"></i>Booking
+                </button>
+                <button class="nav-tab px-4 py-2 rounded-lg text-sm font-semibold text-brand-300 hover:text-white transition-colors" data-page="admin">
+                    <i class="fas fa-shield-halved mr-1.5 text-xs"></i>Admin Panel
+                </button>
+            </div>
+
+            <!-- Right actions -->
+            <div class="flex items-center gap-2">
+                <button id="navClearStorage" class="text-xs font-semibold text-brand-200 hover:text-white bg-brand-800/60 hover:bg-brand-800 px-3 py-1.5 rounded-lg transition-colors" title="Clear all data">
+                    <i class="fas fa-trash-can mr-1"></i>Reset Data
+                </button>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ============================================================
+         PAGE: BOOKING
+         ============================================================ -->
+    <div id="page-booking" class="page active">
+
+        <!-- Hero Section -->
+        <section class="w-full bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 relative overflow-hidden">
+            <div class="absolute inset-0 opacity-10">
+                <div class="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+                <div class="absolute bottom-0 right-20 w-96 h-96 bg-brand-300 rounded-full blur-3xl"></div>
+            </div>
+            <div class="max-w-[1440px] mx-auto px-6 py-12 relative z-10 flex flex-col lg:flex-row items-start gap-8">
+                <div class="flex-1">
+                    <h2 class="text-white text-4xl font-extrabold leading-tight tracking-tight">Book Your<br>Hospital Appointment</h2>
+                    <p class="text-brand-100 mt-3 text-base max-w-md leading-relaxed">Reliable hospital booking with verified doctors across multiple departments. Pick a hospital, choose a doctor, and confirm your slot.</p>
+                    <div class="flex gap-3 mt-6">
+                        <button id="heroBookBtn" class="px-6 py-3 bg-white text-brand-700 font-bold rounded-xl hover:bg-brand-50 transition-colors shadow-lg shadow-brand-900/20">
+                            <i class="fas fa-plus mr-2"></i>Book Appointment
+                        </button>
+                        <button id="heroCancelBtn" class="px-6 py-3 bg-white/15 text-white font-bold rounded-xl hover:bg-white/25 transition-colors border border-white/20">
+                            <i class="fas fa-xmark mr-2"></i>Cancel Appointment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Why Choose Us -->
+                <div class="w-full lg:w-80 bg-white/95 backdrop-blur rounded-2xl p-5 shadow-xl shadow-brand-900/10 border border-brand-100">
+                    <p class="font-bold text-brand-900 text-sm mb-4">Why families choose us</p>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center shrink-0"><i class="fas fa-heart text-brand-600 text-xs"></i></span>
+                            <p class="text-sm text-surface-600">Kid-friendly waiting rooms and gentle, patient staff</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center shrink-0"><i class="fas fa-clock text-brand-600 text-xs"></i></span>
+                            <p class="text-sm text-surface-600">Same-week appointments across every department</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center shrink-0"><i class="fas fa-shield-halved text-brand-600 text-xs"></i></span>
+                            <p class="text-sm text-surface-600">Board-certified doctors, fully licensed hospitals</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-dashed border-brand-200">
+                        <p class="text-xs text-surface-400">Select a hospital below to see departments and available doctors.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wave divider -->
+        <svg class="block w-full -mt-1" viewBox="0 0 1440 44" fill="#f1f5f9" preserveAspectRatio="none" style="height: 28px;">
+            <path d="M0,22 C240,44 480,0 720,11 C960,22 1200,44 1440,16 L1440,44 L0,44 Z"></path>
+        </svg>
+
+        <!-- Hospital Cards Grid -->
+        <section class="max-w-[1440px] mx-auto px-6 pb-12 -mt-2">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="text-xl font-bold text-surface-800">Available Hospitals</h3>
+                <span id="hospitalCount" class="text-sm font-semibold text-surface-400">0 hospitals</span>
+            </div>
+            <div id="bookingHospitalGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <!-- Populated by JS -->
+            </div>
+            <div id="bookingEmptyState" class="hidden text-center py-20">
+                <div class="w-16 h-16 rounded-full bg-surface-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-hospital text-surface-300 text-2xl"></i>
+                </div>
+                <p class="text-surface-500 font-semibold">No hospitals found</p>
+                <p class="text-surface-400 text-sm mt-1">Add hospitals from the Admin Panel first.</p>
+                <button class="mt-4 px-5 py-2 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 transition-colors text-sm" onclick="switchPage('admin')">
+                    Go to Admin Panel
+                </button>
+            </div>
+        </section>
+    </div>
+
+
+    <!-- ============================================================
+         PAGE: ADMIN PANEL
+         ============================================================ -->
+    <div id="page-admin" class="page">
+        <div class="max-w-[1440px] mx-auto px-6 py-8">
+            <!-- Admin Header -->
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-3xl font-extrabold text-surface-900">Hospital Admin Panel</h2>
+                    <p class="mt-1 text-surface-500 text-sm">Add, edit, and delete hospital information from the list.</p>
+                </div>
+                <button id="adminNewHospitalBtn" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-semibold text-sm transition-colors shadow-lg shadow-brand-600/20">
+                    <i class="fas fa-plus"></i>Add New Hospital
+                </button>
+            </div>
+
+            <div class="grid lg:grid-cols-[1fr_360px] gap-6">
+                <!-- Left: Form -->
+                <section class="bg-surface-900 rounded-2xl border border-surface-700 overflow-hidden shadow-xl">
+                    <div class="border-b border-surface-700 px-6 py-5">
+                        <h3 class="text-lg font-bold text-white">Hospital Information</h3>
+                        <p class="mt-0.5 text-sm text-surface-400">Manage hospital records, including emergency service availability.</p>
+                    </div>
+
+                    <form id="hospitalForm" class="p-6 space-y-5 text-white" autocomplete="off">
+                        <!-- Hospital ID -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label for="hospitalId" class="text-sm font-medium text-surface-300">Hospital ID</label>
+                                <button type="button" id="genIdBtn" class="flex items-center gap-1.5 bg-surface-700 hover:bg-surface-600 text-surface-200 hover:text-white rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors">
+                                    <i class="fas fa-rotate text-[10px]"></i>Generate ID
+                                </button>
+                            </div>
+                            <input id="hospitalId" type="text" disabled placeholder="Click Generate ID" class="form-input !bg-surface-800 !border-surface-600 !text-surface-400 !cursor-not-allowed">
+                        </div>
+
+                        <!-- Hospital Name -->
+                        <div>
+                            <label for="hospitalName" class="block text-sm font-medium text-surface-300 mb-1.5">Hospital Name</label>
+                            <input id="hospitalName" type="text" placeholder="e.g. City General Hospital" required class="form-input !bg-surface-800 !border-surface-600 !text-white">
+                        </div>
+
+                        <!-- Location -->
+                        <div>
+                            <label for="hospitalLocation" class="block text-sm font-medium text-surface-300 mb-1.5">Main Location</label>
+                            <input id="hospitalLocation" type="text" placeholder="e.g. Mumbai, Maharashtra" required class="form-input !bg-surface-800 !border-surface-600 !text-white">
+                        </div>
+
+                        <!-- Emergency -->
+                        <div class="flex items-center gap-3">
+                            <input id="hospitalEmergency" type="checkbox" class="h-5 w-5 rounded border-surface-600 text-brand-500 focus:ring-brand-500 bg-surface-800">
+                            <label for="hospitalEmergency" class="text-sm font-medium text-surface-300">Emergency services available</label>
+                        </div>
+
+                        <!-- Branches Section -->
+                        <div class="rounded-2xl border border-surface-700 p-5 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-base font-semibold text-white">Hospital Branches</h4>
+                                    <p class="text-xs text-surface-400 mt-0.5">Add satellite locations for this hospital.</p>
+                                </div>
+                                <button type="button" id="toggleBranchInput" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>Add Branch
+                                </button>
+                            </div>
+
+                            <div id="branchInputArea" class="hidden">
+                                <div class="flex gap-2">
+                                    <input id="branchInput" type="text" placeholder="Enter branch location..." class="form-input !bg-surface-800 !border-surface-600 !text-white flex-1">
+                                    <button type="button" id="addBranchBtn" class="bg-surface-600 hover:bg-surface-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Add</button>
+                                </div>
+                            </div>
+
+                            <div id="branchesList" class="flex flex-wrap gap-2"></div>
+                        </div>
+
+                        <!-- Departments & Doctors Section -->
+                        <div class="rounded-2xl border border-surface-700 bg-surface-800/50 p-5 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-base font-semibold text-white">Departments & Doctors</h4>
+                                    <p class="text-xs text-surface-400 mt-0.5">Create departments and assign doctors.</p>
+                                </div>
+                                <button type="button" id="toggleDeptInput" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>Add Department
+                                </button>
+                            </div>
+
+                            <!-- Department Input -->
+                            <div id="deptInputArea" class="hidden space-y-3">
+                                <input id="deptInput" type="text" list="deptDatalist" placeholder="Search or type department name..." class="form-input !bg-surface-800 !border-surface-600 !text-white">
+                                <datalist id="deptDatalist">
+                                    <option value="General Medicine"><option value="Cardiology"><option value="Neurology">
+                                    <option value="Neurosurgery"><option value="Orthopedics"><option value="General Surgery">
+                                    <option value="Pediatrics"><option value="Gynecology"><option value="Obstetrics">
+                                    <option value="Dermatology"><option value="ENT (Ear, Nose & Throat)">
+                                    <option value="Ophthalmology"><option value="Urology"><option value="Nephrology">
+                                    <option value="Pulmonology"><option value="Gastroenterology"><option value="Endocrinology">
+                                    <option value="Psychiatry"><option value="Psychology"><option value="Radiology">
+                                    <option value="Pathology"><option value="Emergency Medicine"><option value="Anesthesiology">
+                                    <option value="ICU (Intensive Care Unit)"><option value="Physiotherapy">
+                                    <option value="Oncology"><option value="Dental"><option value="Plastic Surgery">
+                                    <option value="Rheumatology"><option value="Infectious Diseases">
+                                </datalist>
+                                <div class="flex gap-2">
+                                    <button type="button" id="saveDeptBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Save Department</button>
+                                </div>
+                            </div>
+
+                            <!-- Doctor Input (shown after selecting a dept) -->
+                            <div id="doctorInputArea" class="hidden space-y-3">
+                                <p class="text-xs text-surface-400">Adding doctor to: <strong id="doctorTargetDept" class="text-brand-400"></strong></p>
+                                <input id="doctorInput" type="text" placeholder="Enter doctor name..." class="form-input !bg-surface-800 !border-surface-600 !text-white">
+                                <button type="button" id="saveDoctorBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">Add Doctor</button>
+                            </div>
+
+                            <!-- Departments Container -->
+                            <div id="departmentsContainer" class="space-y-3"></div>
+                        </div>
+
+                        <!-- Form Error -->
+                        <div id="adminFormError" class="hidden text-red-400 text-sm font-medium"></div>
+
+                        <!-- Actions -->
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button type="button" id="adminCancelBtn" class="px-5 py-3 rounded-xl text-sm font-semibold text-surface-400 hover:text-white hover:bg-surface-700 transition-colors">Cancel</button>
+                            <button type="submit" id="adminSaveBtn" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-brand-600/20">
+                                <i class="fas fa-save mr-1.5"></i>Save Hospital
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Right: Preview -->
+                <aside class="space-y-4">
+                    <div class="bg-white rounded-2xl border border-surface-200 p-5 shadow-sm sticky top-24">
+                        <h3 class="text-base font-bold text-surface-800 mb-1">Saved Hospitals</h3>
+                        <p class="text-xs text-surface-400 mb-4">Preview of all hospitals in the system.</p>
+                        <div id="adminPreview" class="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div id="adminPreviewEmpty" class="text-center py-8">
+                            <i class="fas fa-inbox text-surface-200 text-3xl mb-2"></i>
+                            <p class="text-sm text-surface-400">No hospitals saved yet.</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </div>
+
+
+    <!-- ============================================================
+         MODAL: BOOK APPOINTMENT
+         ============================================================ -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-surface-800">Book Appointment</h3>
+                    <button id="closeBookingModal" class="w-9 h-9 rounded-xl flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">
+                        <i class="fas fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <form id="bookingForm" class="space-y-4" novalidate>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Full Name *</label>
+                            <input id="bkName" type="text" placeholder="Enter your full name" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Email *</label>
+                            <input id="bkEmail" type="email" placeholder="you@example.com" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Phone *</label>
+                            <input id="bkPhone" type="tel" placeholder="+91 943XX XXXXX" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Address</label>
+                            <input id="bkAddress" type="text" placeholder="123 Main St, City" class="form-input">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Hospital *</label>
+                            <select id="bkHospital" class="form-input"><option value="">Select Hospital</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Department *</label>
+                            <select id="bkDepartment" class="form-input"><option value="">Select Department</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Doctor *</label>
+                            <select id="bkDoctor" class="form-input"><option value="">Select Doctor</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Time Slot *</label>
+                            <select id="bkTime" class="form-input">
+                                <option value="">Select Time</option>
+                                <option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option>
+                                <option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
+                                <option>02:00 PM</option><option>02:30 PM</option><option>03:00 PM</option>
+                                <option>03:30 PM</option><option>04:00 PM</option><option>04:30 PM</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Preferred Date *</label>
+                            <input id="bkDate" type="date" class="form-input">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-surface-500 mb-1">Reason for Visit *</label>
+                            <textarea id="bkReason" rows="3" placeholder="Briefly describe your symptoms or reason..." class="form-input resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="bookingFormError" class="hidden text-red-500 text-sm font-medium p-3 bg-red-50 rounded-xl"></div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition-colors">
+                            <i class="fas fa-check mr-1.5"></i>Confirm Appointment
+                        </button>
+                        <button type="button" id="bookingCancelBtn" class="flex-1 bg-surface-100 hover:bg-surface-200 text-surface-600 font-semibold py-3 rounded-xl transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================
+         MODAL: VIEW APPOINTMENTS
+         ============================================================ -->
+    <div id="appointmentsModal" class="modal-overlay">
+        <div class="modal-box" style="max-width:560px;">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-lg font-bold text-surface-800">Appointments</h3>
+                    <button id="closeAppointmentsModal" class="w-9 h-9 rounded-xl flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+                <div id="appointmentsList" class="space-y-3 max-h-[60vh] overflow-y-auto">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================
+         JAVASCRIPT — All Application Logic
+         ============================================================ -->
+    <script>
+    /* ==============================================================
+       SECTION 1: CONSTANTS & CONFIGURATION
+       ============================================================== */
+
+    const STORAGE_KEY = 'AdminData';
+    const APPOINTMENTS_KEY = 'BookedAppointments';
+
+    const DEPARTMENT_CODES = {
+        "General Medicine": "GMED", "Cardiology": "CARD", "Neurology": "NEUR",
+        "Neurosurgery": "NSURG", "Orthopedics": "ORTH", "General Surgery": "GSURG",
+        "Pediatrics": "PED", "Gynecology": "GYN", "Obstetrics": "OBS",
+        "Dermatology": "DERM", "ENT (Ear, Nose & Throat)": "ENT", "Ophthalmology": "OPTH",
+        "Urology": "URO", "Nephrology": "NEPH", "Pulmonology": "PULM",
+        "Gastroenterology": "GASTRO", "Endocrinology": "ENDO", "Psychiatry": "PSY",
+        "Psychology": "PSYCHO", "Radiology": "RAD", "Pathology": "PATH",
+        "Emergency Medicine": "EMR", "Anesthesiology": "ANES",
+        "ICU (Intensive Care Unit)": "ICU", "Physiotherapy": "PHYSIO",
+        "Oncology": "ONCO", "Dental": "DENT", "Plastic Surgery": "PLAST",
+        "Rheumatology": "RHEUM", "Infectious Diseases": "ID"
+    };
+
+
+    /* ==============================================================
+       SECTION 2: UTILITY FUNCTIONS
+       ============================================================== */
+
+    /** Generate a random alphanumeric code */
+    function randomCode(length = 5) {
+        return Math.random().toString(36).substring(2, length + 2).toUpperCase();
+    }
+
+    /** Generate a hospital ID like HOSP-A3X9K */
+    function generateHospitalId() {
+        return `HOSP-${randomCode(5)}`;
+    }
+
+    /** Generate a department ID like DEPT-CARD-003 */
+    function generateDeptId(deptName, count) {
+        const code = DEPARTMENT_CODES[deptName];
+        if (!code) return `DEPT-UNKN-${String(count).padStart(3, '0')}`;
+        return `DEPT-${code}-${String(count).padStart(3, '0')}`;
+    }
+
+    /** Generate a doctor ID like DOC-0042 */
+    function generateDocId(count) {
+        return `DOC-${String(count).padStart(4, '0')}`;
+    }
+
+    /** Show a toast notification */
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'circle-exclamation' : 'info-circle'} mr-2"></i>${message}`;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 350);
+        }, 3500);
+    }
+
+    /** Open a modal */
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+    }
+
+    /** Close a modal */
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+    }
+
+
+    /* ==============================================================
+       SECTION 3: DATA LAYER (localStorage CRUD)
+       ============================================================== */
+
+    /** Read all hospitals from localStorage */
+    function getHospitals() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            console.error('Failed to parse hospital data:', e);
+            return [];
+        }
+    }
+
+    /** Save all hospitals to localStorage */
+    function saveHospitals(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    /** Add a new hospital */
+    function addHospital(hospital) {
+        const list = getHospitals();
+        list.push(hospital);
+        saveHospitals(list);
+    }
+
+    /** Update an existing hospital by ID */
+    function updateHospital(id, updatedData) {
+        const list = getHospitals();
+        const idx = list.findIndex(h => h.id === id);
+        if (idx === -1) return false;
+        list[idx] = updatedData;
+        saveHospitals(list);
+        return true;
+    }
+
+    /** Delete a hospital by ID */
+    function deleteHospital(id) {
+        const list = getHospitals().filter(h => h.id !== id);
+        saveHospitals(list);
+    }
+
+    /** Find a hospital by ID */
+    function findHospital(id) {
+        return getHospitals().find(h => h.id === id) || null;
+    }
+
+    /** Read appointments */
+    function getAppointments() {
+        try {
+            const raw = localStorage.getItem(APPOINTMENTS_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    /** Save appointments */
+    function saveAppointments(data) {
+        localStorage.setItem(APPOINTMENTS_KEY, JSON.stringify(data));
+    }
+
+    /** Add an appointment */
+    function addAppointment(apt) {
+        const list = getAppointments();
+        apt.id = `APT-${randomCode(6)}`;
+        apt.bookedAt = new Date().toISOString();
+        list.push(apt);
+        saveAppointments(list);
+    }
+
+    /** Clear all data */
+    function clearAllData() {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(APPOINTMENTS_KEY);
+    }
+
+
+    /* ==============================================================
+       SECTION 4: ADMIN PANEL — Form State & Logic
+       ============================================================== */
+
+    /** Create a blank form state object */
+    function createEmptyFormState() {
+        return {
+            id: '',
+            name: '',
+            location: '',
+            emergency: false,
+            branches: [],
+            departments: []
+        };
+    }
+
+    let adminFormState = createEmptyFormState();
+    let editingHospitalId = null;
+    let activeDeptName = null; // Tracks which department we're adding doctors to
+    let deptCounter = 0;
+    let docCounter = 0;
+
+
+    /** Reset the admin form to blank */
+    function resetAdminForm() {
+        adminFormState = createEmptyFormState();
+        editingHospitalId = null;
+        activeDeptName = null;
+        deptCounter = 0;
+        docCounter = 0;
+
+        document.getElementById('hospitalId').value = '';
+        document.getElementById('hospitalName').value = '';
+        document.getElementById('hospitalLocation').value = '';
+        document.getElementById('hospitalEmergency').checked = false;
+        document.getElementById('branchInput').value = '';
+        document.getElementById('deptInput').value = '';
+        document.getElementById('doctorInput').value = '';
+        document.getElementById('branchesList').innerHTML = '';
+        document.getElementById('departmentsContainer').innerHTML = '';
+        document.getElementById('branchInputArea').classList.add('hidden');
+        document.getElementById('deptInputArea').classList.add('hidden');
+        document.getElementById('doctorInputArea').classList.add('hidden');
+        document.getElementById('adminFormError').classList.add('hidden');
+    }
+
+    /** Validate the admin form before saving */
+    function validateAdminForm() {
+        const errEl = document.getElementById('adminFormError');
+        if (!adminFormState.id) { errEl.textContent = 'Please generate a Hospital ID.'; errEl.classList.remove('hidden'); return false; }
+        if (!adminFormState.name.trim()) { errEl.textContent = 'Hospital name is required.'; errEl.classList.remove('hidden'); return false; }
+        if (!adminFormState.location.trim()) { errEl.textContent = 'Hospital location is required.'; errEl.classList.remove('hidden'); return false; }
+        if (adminFormState.departments.length === 0) { errEl.textContent = 'Add at least one department.'; errEl.classList.remove('hidden'); return false; }
+        errEl.classList.add('hidden');
+        return true;
+    }
+
+    /** Save the current admin form state */
+    function saveAdminForm() {
+        if (!validateAdminForm()) return;
+
+        if (editingHospitalId === null) {
+            addHospital(structuredClone(adminFormState));
+            showToast('Hospital added successfully!');
+        } else {
+            updateHospital(editingHospitalId, structuredClone(adminFormState));
+            showToast('Hospital updated successfully!');
+        }
+
+        resetAdminForm();
+        renderAdminPreview();
+        renderBookingHospitals();
+    }
+
+    /** Load a hospital into the form for editing */
+    function editHospital(id) {
+        const hospital = findHospital(id);
+        if (!hospital) return;
+
+        editingHospitalId = id;
+        adminFormState = structuredClone(hospital);
+
+        document.getElementById('hospitalId').value = hospital.id;
+        document.getElementById('hospitalName').value = hospital.name;
+        document.getElementById('hospitalLocation').value = hospital.location;
+        document.getElementById('hospitalEmergency').checked = hospital.emergency;
+
+        // Render branches
+        document.getElementById('branchesList').innerHTML = '';
+        hospital.branches.forEach(b => renderBranchChip(b));
+
+        // Render departments
+        document.getElementById('departmentsContainer').innerHTML = '';
+        deptCounter = 0;
+        hospital.departments.forEach(dept => {
+            deptCounter++;
+            renderDeptCard(dept);
+        });
+
+        docCounter = hospital.departments.reduce((sum, d) => sum + d.doctors.length, 0);
+
+        // Scroll to top of form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showToast('Editing: ' + hospital.name, 'info');
+    }
+
+    /** Handle deleting a hospital */
+    function handleDeleteHospital(id) {
+        const hospital = findHospital(id);
+        if (!hospital) return;
+        if (!confirm(`Delete "${hospital.name}"? This cannot be undone.`)) return;
+
+        deleteHospital(id);
+        renderAdminPreview();
+        renderBookingHospitals();
+        showToast('Hospital deleted.', 'error');
+
+        // If we were editing this hospital, reset form
+        if (editingHospitalId === id) resetAdminForm();
+    }
+
+
+    /* ==============================================================
+       SECTION 5: ADMIN PANEL — UI Rendering
+       ============================================================== */
+
+    /** Render a single branch chip */
+    function renderBranchChip(branchName) {
+        const chip = document.createElement('span');
+        chip.className = 'branch-chip';
+        chip.innerHTML = `
+            <i class="fas fa-location-dot text-[10px] text-brand-400"></i>
+            ${branchName}
+            <button type="button" class="remove-branch" data-branch="${branchName}" title="Remove branch">
+                <i class="fas fa-xmark text-[10px]"></i>
+            </button>
+        `;
+        document.getElementById('branchesList').appendChild(chip);
+    }
+
+    /** Render a single department card in the admin form */
+    function renderDeptCard(dept) {
+        const card = document.createElement('div');
+        card.className = 'dept-card';
+        card.dataset.deptName = dept.name;
+
+        let doctorsHtml = dept.doctors.length > 0
+            ? dept.doctors.map(d => `
+                <span class="doctor-chip">
+                    <i class="fas fa-user-doctor text-[10px] text-brand-400"></i>
+                    ${d}
+                    <button type="button" class="remove-doctor" data-dept="${dept.name}" data-doctor="${d}" title="Remove doctor">
+                        <i class="fas fa-xmark text-[10px]"></i>
+                    </button>
+                </span>
+            `).join('')
+            : '<span class="text-surface-500 text-xs italic">No doctors added yet.</span>';
+
+        card.innerHTML = `
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h5 class="font-bold text-white text-sm">${dept.name}</h5>
+                    <span class="text-[10px] text-surface-500 font-mono">${dept.departmentId}</span>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" class="add-doctor-to-dept text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1 rounded-lg transition-colors font-semibold" data-dept="${dept.name}">
+                        <i class="fas fa-user-plus mr-1"></i>Add Doctor
+                    </button>
+                    <button type="button" class="remove-dept text-xs bg-red-500/20 hover:bg-red-500/40 text-red-400 px-2 py-1 rounded-lg transition-colors" data-dept="${dept.name}" title="Remove department">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">${doctorsHtml}</div>
+        `;
+
+        document.getElementById('departmentsContainer').appendChild(card);
+    }
+
+    /** Render the admin preview sidebar */
+    function renderAdminPreview() {
+        const container = document.getElementById('adminPreview');
+        const emptyState = document.getElementById('adminPreviewEmpty');
+        const hospitals = getHospitals();
+
+        if (hospitals.length === 0) {
+            container.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+        container.innerHTML = hospitals.map(h => `
+            <div class="preview-card">
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-mono text-surface-400">${h.id}</p>
+                        <h4 class="font-bold text-surface-800 text-sm truncate">${h.name}</h4>
+                        <p class="text-xs text-surface-500"><i class="fas fa-location-dot mr-1 text-[9px]"></i>${h.location}</p>
+                    </div>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${h.emergency ? 'bg-green-100 text-green-700' : 'bg-surface-100 text-surface-500'}">
+                        ${h.emergency ? '24/7' : 'No ER'}
+                    </span>
+                </div>
+                ${h.branches.length > 0 ? `<p class="text-[10px] text-surface-400 mb-2"><i class="fas fa-code-branch mr-1"></i>${h.branches.length} branch${h.branches.length > 1 ? 'es' : ''}</p>` : ''}
+                <p class="text-[10px] text-surface-400"><i class="fas fa-building mr-1"></i>${h.departments.length} dept${h.departments.length > 1 ? 's' : ''} &middot; ${h.departments.reduce((s, d) => s + d.doctors.length, 0)} doctors</p>
+                <div class="flex gap-2 mt-3">
+                    <button class="edit-hospital-btn flex-1 text-xs font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 py-1.5 rounded-lg transition-colors" data-id="${h.id}">
+                        <i class="fas fa-pen mr-1"></i>Edit
+                    </button>
+                    <button class="delete-hospital-btn flex-1 text-xs font-semibold bg-red-50 text-red-600 hover:bg-red-100 py-1.5 rounded-lg transition-colors" data-id="${h.id}">
+                        <i class="fas fa-trash-can mr-1"></i>Delete
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+
+    /* ==============================================================
+       SECTION 6: BOOKING PAGE — Rendering & Logic
+       ============================================================== */
+
+    /** Render hospital cards on the booking page */
+    function renderBookingHospitals() {
+        const grid = document.getElementById('bookingHospitalGrid');
+        const emptyState = document.getElementById('bookingEmptyState');
+        const countEl = document.getElementById('hospitalCount');
+        const hospitals = getHospitals();
+
+        countEl.textContent = `${hospitals.length} hospital${hospitals.length !== 1 ? 's' : ''}`;
+
+        if (hospitals.length === 0) {
+            grid.innerHTML = '';
+            emptyState.classList.remove('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+
+        grid.innerHTML = hospitals.map((h, i) => {
+            const deptCount = h.departments.length;
+            const docCount = h.departments.reduce((s, d) => s + d.doctors.length, 0);
+            const branchCount = h.branches.length;
+
+            return `
+            <div class="bg-white rounded-2xl overflow-hidden border border-surface-200 card-lift" style="animation: fadeSlideUp 0.4s ${i * 0.06}s both ease-out;">
+                <div class="hosp-img-placeholder">
+                    <div class="text-center">
+                        <i class="fas fa-hospital text-3xl mb-2 opacity-40"></i>
+                        <p>${h.name.split(' ').slice(0, 2).join(' ')}</p>
+                    </div>
+                </div>
+                <div class="p-4 space-y-2">
+                    <h4 class="font-bold text-surface-800 text-sm leading-tight line-clamp-2">${h.name}</h4>
+                    <p class="text-xs text-surface-500 flex items-center gap-1">
+                        <i class="fas fa-location-dot text-[9px]"></i>${h.location}
+                    </p>
+                    <div class="flex items-center gap-3 text-[11px] text-surface-400">
+                        <span><i class="fas fa-building text-[9px] mr-0.5"></i>${deptCount} depts</span>
+                        <span><i class="fas fa-user-doctor text-[9px] mr-0.5"></i>${docCount} doctors</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="font-semibold ${h.emergency ? 'text-green-600' : 'text-surface-400'}">
+                            ${h.emergency ? '<i class="fas fa-circle-check mr-0.5"></i>Emergency' : '<i class="fas fa-circle-xmark mr-0.5"></i>No ER'}
+                        </span>
+                        ${branchCount > 0 ? `<span class="text-surface-300">&middot;</span><span class="text-surface-400">${branchCount} branch${branchCount > 1 ? 'es' : ''}</span>` : ''}
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                        <button class="book-hosp-btn flex-1 text-xs font-bold bg-brand-50 text-brand-700 hover:bg-brand-100 py-2 rounded-xl transition-colors" data-hospital-id="${h.id}">
+                            <i class="fas fa-calendar-plus mr-1"></i>Book Now
+                        </button>
+                        <button class="view-apts-btn text-xs font-semibold bg-surface-50 text-surface-500 hover:bg-surface-100 hover:text-surface-700 py-2 px-3 rounded-xl transition-colors" data-hospital-id="${h.id}" title="View appointments">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    /** Open booking modal pre-filled for a specific hospital */
+    function openBookingForHospital(hospitalId) {
+        const hospital = findHospital(hospitalId);
+        if (!hospital) return;
+
+        // Reset form
+        document.getElementById('bookingForm').reset();
+        document.getElementById('bookingFormError').classList.add('hidden');
+
+        // Set min date to today
+        document.getElementById('bkDate').min = new Date().toISOString().split('T')[0];
+
+        // Fill hospital
+        const hospSelect = document.getElementById('bkHospital');
+        hospSelect.innerHTML = `<option value="${hospital.id}">${hospital.name}</option>`;
+
+        // Fill departments
+        const deptSelect = document.getElementById('bkDepartment');
+        deptSelect.innerHTML = '<option value="">Select Department</option>';
+        hospital.departments.forEach(dept => {
+            deptSelect.innerHTML += `<option value="${dept.name}">${dept.name}</option>`;
+        });
+
+        // Clear doctors
+        document.getElementById('bkDoctor').innerHTML = '<option value="">Select Doctor</option>';
+
+        openModal('bookingModal');
+    }
+
+    /** Validate and submit the booking form */
+    function handleBookingSubmit(e) {
+        e.preventDefault();
+        const errEl = document.getElementById('bookingFormError');
+
+        const name = document.getElementById('bkName').value.trim();
+        const email = document.getElementById('bkEmail').value.trim();
+        const phone = document.getElementById('bkPhone').value.trim();
+        const address = document.getElementById('bkAddress').value.trim();
+        const hospitalId = document.getElementById('bkHospital').value;
+        const department = document.getElementById('bkDepartment').value;
+        const doctor = document.getElementById('bkDoctor').value;
+        const timeSlot = document.getElementById('bkTime').value;
+        const date = document.getElementById('bkDate').value;
+        const reason = document.getElementById('bkReason').value.trim();
+
+        // Validation
+        if (!name) { showBookingError('Please enter your full name.'); return; }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) { showBookingError('Please enter a valid email address.'); return; }
+
+        const phoneRegex = /^[6-9]\d{9}$/;
+        if (!phoneRegex.test(phone.replace(/\s/g, ''))) { showBookingError('Please enter a valid 10-digit phone number starting with 6-9.'); return; }
+
+        if (!hospitalId) { showBookingError('Please select a hospital.'); return; }
+        if (!department) { showBookingError('Please select a department.'); return; }
+        if (!doctor) { showBookingError('Please select a doctor.'); return; }
+        if (!timeSlot) { showBookingError('Please select a time slot.'); return; }
+        if (!date) { showBookingError('Please select a date.'); return; }
+        if (reason.length < 10) { showBookingError('Please provide a reason with at least 10 characters.'); return; }
+
+        // Get hospital name
+        const hospital = findHospital(hospitalId);
+        const hospitalName = hospital ? hospital.name : 'Unknown';
+
+        // Save appointment
+        addAppointment({ name, email, phone, address, hospitalId, hospitalName, department, doctor, timeSlot, date, reason });
+
+        closeModal('bookingModal');
+        showToast(`Appointment booked with ${doctor} at ${hospitalName}!`);
+        document.getElementById('bookingForm').reset();
+
+        function showBookingError(msg) {
+            errEl.textContent = msg;
+            errEl.classList.remove('hidden');
+        }
+    }
+
+    /** Show appointments for a hospital */
+    function showHospitalAppointments(hospitalId) {
+        const hospital = findHospital(hospitalId);
+        if (!hospital) return;
+
+        const apts = getAppointments().filter(a => a.hospitalId === hospitalId);
+        const container = document.getElementById('appointmentsList');
+
+        if (apts.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fas fa-calendar-xmark text-surface-200 text-3xl mb-3"></i>
+                    <p class="text-surface-500 font-semibold text-sm">No appointments booked</p>
+                    <p class="text-surface-400 text-xs mt-1">for ${hospital.name}</p>
+                </div>`;
+        } else {
+            container.innerHTML = apts.map(a => `
+                <div class="p-4 bg-surface-50 rounded-xl border border-surface-100">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <p class="font-bold text-surface-800 text-sm">${a.name}</p>
+                            <p class="text-xs text-surface-400 mt-0.5">${a.email} &middot; ${a.phone}</p>
+                        </div>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">${a.department}</span>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-surface-500">
+                        <span><i class="fas fa-user-doctor mr-1 text-[9px]"></i>${a.doctor}</span>
+                        <span><i class="fas fa-clock mr-1 text-[9px]"></i>${a.timeSlot}</span>
+                        <span><i class="fas fa-calendar mr-1 text-[9px]"></i>${a.date}</span>
+                    </div>
+                    <p class="text-xs text-surface-400 mt-2 italic">${a.reason}</p>
+                </div>
+            `).join('');
+        }
+
+        openModal('appointmentsModal');
+    }
+
+
+    /* ==============================================================
+       SECTION 7: PAGE NAVIGATION
+       ============================================================== */
+
+    function switchPage(pageName) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+        const page = document.getElementById(`page-${pageName}`);
+        const tab = document.querySelector(`.nav-tab[data-page="${pageName}"]`);
+
+        if (page) page.classList.add('active');
+        if (tab) tab.classList.add('active');
+
+        // Re-render when switching pages
+        if (pageName === 'booking') renderBookingHospitals();
+        if (pageName === 'admin') renderAdminPreview();
+    }
+
+
+    /* ==============================================================
+       SECTION 8: EVENT BINDING
+       ============================================================== */
+
+    function bindEvents() {
+
+        /* --- Navigation --- */
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => switchPage(tab.dataset.page));
+        });
+
+        document.getElementById('navClearStorage').addEventListener('click', () => {
+            if (!confirm('Clear ALL hospital and appointment data? This cannot be undone.')) return;
+            clearAllData();
+            resetAdminForm();
+            renderAdminPreview();
+            renderBookingHospitals();
+            showToast('All data cleared.', 'error');
+        });
+
+        /* --- Admin: Generate ID --- */
+        document.getElementById('genIdBtn').addEventListener('click', () => {
+            const id = generateHospitalId();
+            document.getElementById('hospitalId').value = id;
+            adminFormState.id = id;
+        });
+
+        /* --- Admin: Form field changes --- */
+        document.getElementById('hospitalName').addEventListener('input', function () {
+            adminFormState.name = this.value;
+        });
+
+        document.getElementById('hospitalLocation').addEventListener('input', function () {
+            adminFormState.location = this.value;
+        });
+
+        document.getElementById('hospitalEmergency').addEventListener('change', function () {
+            adminFormState.emergency = this.checked;
+        });
+
+        /* --- Admin: Branches --- */
+        document.getElementById('toggleBranchInput').addEventListener('click', () => {
+            document.getElementById('branchInputArea').classList.toggle('hidden');
+            document.getElementById('branchInput').focus();
+        });
+
+        document.getElementById('addBranchBtn').addEventListener('click', () => {
+            const input = document.getElementById('branchInput');
+            const value = input.value.trim();
+            if (!value) return;
+            if (adminFormState.branches.includes(value)) {
+                showToast('Branch already exists.', 'error');
+                return;
+            }
+            adminFormState.branches.push(value);
+            renderBranchChip(value);
+            input.value = '';
+            input.focus();
+        });
+
+        document.getElementById('branchInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('addBranchBtn').click(); }
+        });
+
+        /* --- Admin: Departments --- */
+        document.getElementById('toggleDeptInput').addEventListener('click', () => {
+            const area = document.getElementById('deptInputArea');
+            const isHidden = area.classList.contains('hidden');
+            area.classList.toggle('hidden');
+            if (isHidden) {
+                document.getElementById('doctorInputArea').classList.add('hidden');
+                document.getElementById('deptInput').focus();
+            }
+        });
+
+        document.getElementById('saveDeptBtn').addEventListener('click', () => {
+            const input = document.getElementById('deptInput');
+            const deptName = input.value.trim();
+            if (!deptName) { showToast('Enter a department name.', 'error'); return; }
+
+            const exists = adminFormState.departments.find(d => d.name === deptName);
+            if (exists) { showToast('Department already added.', 'error'); input.value = ''; return; }
+
+            deptCounter++;
+            const dept = {
+                departmentId: generateDeptId(deptName, deptCounter),
+                name: deptName,
+                doctors: []
+            };
+
+            adminFormState.departments.push(dept);
+            renderDeptCard(dept);
+            input.value = '';
+            input.focus();
+            showToast(`Department "${deptName}" added.`);
+        });
+
+        document.getElementById('deptInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('saveDeptBtn').click(); }
+        });
+
+        /* --- Admin: Doctors --- */
+        document.getElementById('saveDoctorBtn').addEventListener('click', () => {
+            const input = document.getElementById('doctorInput');
+            const doctorName = input.value.trim();
+            if (!doctorName) { showToast('Enter a doctor name.', 'error'); return; }
+            if (!activeDeptName) { showToast('No department selected.', 'error'); return; }
+
+            const dept = adminFormState.departments.find(d => d.name === activeDeptName);
+            if (!dept) { showToast('Department not found.', 'error'); return; }
+
+            if (dept.doctors.includes(doctorName)) {
+                showToast('Doctor already in this department.', 'error');
+                input.value = '';
+                return;
+            }
+
+            docCounter++;
+            dept.doctors.push(doctorName);
+
+            // Re-render the department card
+            const card = document.querySelector(`.dept-card[data-dept-name="${activeDeptName}"]`);
+            if (card) {
+                const chip = document.createElement('span');
+                chip.className = 'doctor-chip';
+                chip.innerHTML = `
+                    <i class="fas fa-user-doctor text-[10px] text-brand-400"></i>
+                    ${doctorName}
+                    <button type="button" class="remove-doctor" data-dept="${activeDeptName}" data-doctor="${doctorName}" title="Remove doctor">
+                        <i class="fas fa-xmark text-[10px]"></i>
+                    </button>
+                `;
+                // Remove "no doctors" text if present
+                const italic = card.querySelector('.italic');
+                if (italic) italic.remove();
+                card.querySelector('.flex.flex-wrap').appendChild(chip);
+            }
+
+            input.value = '';
+            input.focus();
+            showToast(`Dr. ${doctorName} added to ${activeDeptName}.`);
+        });
+
+        document.getElementById('doctorInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('saveDoctorBtn').click(); }
+        });
+
+        /* --- Admin: Save & Cancel --- */
+        document.getElementById('hospitalForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveAdminForm();
+        });
+
+        document.getElementById('adminCancelBtn').addEventListener('click', () => {
+            if (editingHospitalId) {
+                if (!confirm('Discard changes?')) return;
+            }
+            resetAdminForm();
+            showToast('Form cleared.', 'info');
+        });
+
+        document.getElementById('adminNewHospitalBtn').addEventListener('click', () => {
+            resetAdminForm();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('hospitalName').focus();
+        });
+
+        /* --- Admin: Delegated clicks on preview sidebar --- */
+        document.getElementById('adminPreview').addEventListener('click', (e) => {
+            const editBtn = e.target.closest('.edit-hospital-btn');
+            const deleteBtn = e.target.closest('.delete-hospital-btn');
+
+            if (editBtn) {
+                editHospital(editBtn.dataset.id);
+                return;
+            }
+            if (deleteBtn) {
+                handleDeleteHospital(deleteBtn.dataset.id);
+                return;
+            }
+        });
+
+        /* --- Admin: Delegated clicks on dynamic elements --- */
+        // Use document-level delegation for dynamically created elements
+        document.addEventListener('click', (e) => {
+            // Remove branch
+            const removeBranchBtn = e.target.closest('.remove-branch');
+            if (removeBranchBtn) {
+                const branchName = removeBranchBtn.dataset.branch;
+                adminFormState.branches = adminFormState.branches.filter(b => b !== branchName);
+                removeBranchBtn.closest('.branch-chip').remove();
+                return;
+            }
+
+            // Remove department
+            const removeDeptBtn = e.target.closest('.remove-dept');
+            if (removeDeptBtn) {
+                const deptName = removeDeptBtn.dataset.dept;
+                adminFormState.departments = adminFormState.departments.filter(d => d.name !== deptName);
+                removeDeptBtn.closest('.dept-card').remove();
+                if (activeDeptName === deptName) {
+                    activeDeptName = null;
+                    document.getElementById('doctorInputArea').classList.add('hidden');
+                }
+                return;
+            }
+
+            // Add doctor to department
+            const addDoctorBtn = e.target.closest('.add-doctor-to-dept');
+            if (addDoctorBtn) {
+                activeDeptName = addDoctorBtn.dataset.dept;
+                document.getElementById('doctorTargetDept').textContent = activeDeptName;
+                document.getElementById('doctorInputArea').classList.remove('hidden');
+                document.getElementById('doctorInput').focus();
+                return;
+            }
+
+            // Remove doctor
+            const removeDoctorBtn = e.target.closest('.remove-doctor');
+            if (removeDoctorBtn) {
+                const deptName = removeDoctorBtn.dataset.dept;
+                const doctorName = removeDoctorBtn.dataset.doctor;
+                const dept = adminFormState.departments.find(d => d.name === deptName);
+                if (dept) {
+                    dept.doctors = dept.doctors.filter(d => d !== doctorName);
+                    removeDoctorBtn.closest('.doctor-chip').remove();
+
+                    // If no doctors left, show placeholder
+                    const card = document.querySelector(`.dept-card[data-dept-name="${deptName}"]`);
+                    if (card && dept.doctors.length === 0) {
+                        const wrap = card.querySelector('.flex.flex-wrap');
+                        wrap.innerHTML = '<span class="text-surface-500 text-xs italic">No doctors added yet.</span>';
+                    }
+                }
+                return;
+            }
+
+            // Booking page: Book button on hospital card
+            const bookHospBtn = e.target.closest('.book-hosp-btn');
+            if (bookHospBtn) {
+                openBookingForHospital(bookHospBtn.dataset.hospitalId);
+                return;
+            }
+
+            // Booking page: View appointments button
+            const viewAptsBtn = e.target.closest('.view-apts-btn');
+            if (viewAptsBtn) {
+                showHospitalAppointments(viewAptsBtn.dataset.hospitalId);
+                return;
+            }
+        });
+
+
+        /* --- Booking: Hero buttons --- */
+        document.getElementById('heroBookBtn').addEventListener('click', () => {
+            openGenericBookingModal();
+        });
+
+        document.getElementById('heroCancelBtn').addEventListener('click', () => {
+            const apts = getAppointments();
+            if (apts.length === 0) {
+                showToast('No appointments to cancel.', 'info');
+                return;
+            }
+            // Show last appointment for cancellation context
+            const last = apts[apts.length - 1];
+            if (confirm(`Cancel your last appointment?\n\nDoctor: ${last.doctor}\nDate: ${last.date}\nTime: ${last.timeSlot}`)) {
+                const list = getAppointments().filter(a => a.id !== last.id);
+                saveAppointments(list);
+                showToast('Appointment cancelled.', 'error');
+            }
+        });
+
+        /* --- Booking: Modal --- */
+        document.getElementById('closeBookingModal').addEventListener('click', () => closeModal('bookingModal'));
+        document.getElementById('bookingCancelBtn').addEventListener('click', () => closeModal('bookingModal'));
+        document.getElementById('bookingForm').addEventListener('submit', handleBookingSubmit);
+
+        // Department → Doctor cascade in booking modal
+        document.getElementById('bkHospital').addEventListener('change', function () {
+            const hospital = findHospital(this.value);
+            const deptSelect = document.getElementById('bkDepartment');
+            const docSelect = document.getElementById('bkDoctor');
+
+            deptSelect.innerHTML = '<option value="">Select Department</option>';
+            docSelect.innerHTML = '<option value="">Select Doctor</option>';
+
+            if (hospital) {
+                hospital.departments.forEach(dept => {
+                    deptSelect.innerHTML += `<option value="${dept.name}">${dept.name}</option>`;
+                });
+            }
+        });
+
+        document.getElementById('bkDepartment').addEventListener('change', function () {
+            const hospitalId = document.getElementById('bkHospital').value;
+            const hospital = findHospital(hospitalId);
+            const docSelect = document.getElementById('bkDoctor');
+
+            docSelect.innerHTML = '<option value="">Select Doctor</option>';
+
+            if (hospital) {
+                const dept = hospital.departments.find(d => d.name === this.value);
+                if (dept) {
+                    dept.doctors.forEach(doc => {
+                        docSelect.innerHTML += `<option value="${doc}">${doc}</option>`;
+                    });
+                }
+            }
+        });
+
+        /* --- Appointments Modal --- */
+        document.getElementById('closeAppointmentsModal').addEventListener('click', () => closeModal('appointmentsModal'));
+
+        /* --- Close modals on backdrop click --- */
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeModal(overlay.id);
+            });
+        });
+
+        /* --- Keyboard: Escape closes modals --- */
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+            }
+        });
+    }
+
+    /** Open booking modal with all hospitals available */
+    function openGenericBookingModal() {
+        const hospitals = getHospitals();
+        if (hospitals.length === 0) {
+            showToast('No hospitals available. Add hospitals from Admin Panel first.', 'error');
+            return;
+        }
+
+        document.getElementById('bookingForm').reset();
+        document.getElementById('bookingFormError').classList.add('hidden');
+        document.getElementById('bkDate').min = new Date().toISOString().split('T')[0];
+
+        const hospSelect = document.getElementById('bkHospital');
+        hospSelect.innerHTML = '<option value="">Select Hospital</option>';
+        hospitals.forEach(h => {
+            hospSelect.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+        });
+
+        document.getElementById('bkDepartment').innerHTML = '<option value="">Select Department</option>';
+        document.getElementById('bkDoctor').innerHTML = '<option value="">Select Doctor</option>';
+
+        openModal('bookingModal');
+    }
+
+
+    /* ==============================================================
+       SECTION 9: INITIALIZATION
+       ============================================================== */
+
+    function init() {
+        bindEvents();
+        renderAdminPreview();
+        renderBookingHospitals();
+
+        // Add a fade-in animation keyframe dynamically
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeSlideUp {
+                from { opacity: 0; transform: translateY(16px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedBook — Hospital Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b',950:'#022c22' },
+                        surface: { 50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a' }
+                    },
+                    fontFamily: { display: ['"Plus Jakarta Sans"','system-ui','sans-serif'] }
+                }
+            }
+        };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        *{box-sizing:border-box}
+        body{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:#d1fae5;border-radius:10px}
+        ::-webkit-scrollbar-thumb:hover{background:#6ee7b7}
+
+        .page{display:none;opacity:0;transition:opacity .3s ease}
+        .page.active{display:block;opacity:1}
+
+        .toast-container{position:fixed;top:76px;right:16px;z-index:99999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:400px;width:100%}
+        .toast{pointer-events:auto;padding:12px 18px;border-radius:12px;color:#fff;font-size:13px;font-weight:600;box-shadow:0 8px 24px -4px rgba(0,0,0,.2);transform:translateX(120%);opacity:0;transition:all .35s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:10px}
+        .toast.show{transform:translateX(0);opacity:1}
+        .toast-success{background:#059669}
+        .toast-error{background:#dc2626}
+        .toast-info{background:#2563eb}
+        .toast-warning{background:#d97706}
+
+        .modal-overlay{position:fixed;inset:0;z-index:8000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s ease}
+        .modal-overlay.open{opacity:1;pointer-events:auto}
+        .modal-box{background:#fff;border-radius:20px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 48px -12px rgba(0,0,0,.25);transform:scale(.92) translateY(16px);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+        .modal-overlay.open .modal-box{transform:scale(1) translateY(0)}
+
+        .drawer-backdrop{position:fixed;inset:0;z-index:7000;background:rgba(0,0,0,.35);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .3s}
+        .drawer-backdrop.open{opacity:1;pointer-events:auto}
+        .drawer-panel{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:92vw;background:#fff;box-shadow:-12px 0 40px -8px rgba(0,0,0,.18);z-index:7001;transform:translateX(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column}
+        .drawer-panel.open{transform:translateX(0)}
+
+        .card-lift{transition:transform .2s ease,box-shadow .2s ease}
+        .card-lift:hover{transform:translateY(-3px);box-shadow:0 10px 28px -6px rgba(0,0,0,.12)}
+
+        .nav-tab{position:relative;transition:color .2s}
+        .nav-tab.active{color:#fff}
+        .nav-tab.active::after{content:'';position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:22px;height:3px;background:#34d399;border-radius:10px}
+
+        .form-input{width:100%;border:1.5px solid #e2e8f0;border-radius:12px;padding:9px 14px;font-size:13px;outline:none;transition:border-color .15s,box-shadow .15s;background:#fff;color:#1e293b}
+        .form-input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+        .form-input::placeholder{color:#94a3b8}
+        .form-input:disabled{background:#f1f5f9;color:#94a3b8;cursor:not-allowed}
+        select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:30px}
+
+        .dept-card{border:1.5px solid #334155;border-radius:14px;padding:14px;background:#1e293b}
+        .doctor-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#334155;border-radius:18px;font-size:11px;color:#d1fae5}
+        .doctor-chip button{cursor:pointer;color:#94a3b8;transition:color .15s}
+        .doctor-chip button:hover{color:#f87171}
+        .branch-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#334155;border-radius:18px;font-size:12px;color:#d1fae5}
+        .branch-chip button{cursor:pointer;color:#94a3b8;transition:color .15s}
+        .branch-chip button:hover{color:#f87171}
+        .preview-card{border:1.5px solid #e2e8f0;border-radius:14px;padding:12px;transition:border-color .2s}
+        .preview-card:hover{border-color:#a7f3d0}
+        .hosp-img-placeholder{height:160px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 50%,#a7f3d0 100%);color:#047857;font-weight:700;font-size:13px;letter-spacing:.04em}
+
+        /* Kanban specific */
+        .drag-source{opacity:.3!important;transform:scale(.96)!important;pointer-events:none}
+        .drop-zone{min-height:52px;border:2px dashed transparent;border-radius:10px;transition:all .15s ease}
+        .drop-zone.drag-valid{background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.4);box-shadow:inset 0 0 0 1px rgba(16,185,129,.1)}
+        .drop-zone.drag-invalid{background:rgba(239,68,68,.06);border-color:rgba(239,68,68,.4);box-shadow:inset 0 0 0 1px rgba(239,68,68,.1)}
+        .draggable-card{cursor:grab;user-select:none;-webkit-user-select:none}
+        .draggable-card:active{cursor:grabbing}
+        .status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+        .status-badge .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+        .st-available{background:#d1fae5;color:#047857}.st-available .dot{background:#059669}
+        .st-scheduled{background:#dbeafe;color:#1d4ed8}.st-scheduled .dot{background:#2563eb}
+        .st-conflict{background:#fee2e2;color:#991b1b;animation:pulseConflict 1.5s infinite}.st-conflict .dot{background:#dc2626}
+        @keyframes pulseConflict{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(239,68,68,.15)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .anim-fade-up{animation:fadeUp .35s ease-out both}
+        .today-col{position:relative}
+        .today-col::before{content:'';position:absolute;inset:-1px;border-radius:16px;padding:2px;background:linear-gradient(135deg,#10b981,#34d399,#6ee7b7);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+
+        @media(max-width:1024px){:root{--pool-w:260px}}
+        @media(max-width:768px){.scheduler-pool{display:none!important}}
+    </style>
+</head>
+
+<body class="min-h-screen bg-surface-100">
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Drawer Backdrop -->
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<!-- Drawer Panel -->
+<aside class="drawer-panel" id="drawerPanel">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-surface-100 flex-shrink-0">
+        <div><h3 class="text-sm font-bold text-surface-900" id="drawerTitle">Appointments</h3><p class="text-[11px] text-surface-400 mt-0.5" id="drawerSub">Details</p></div>
+        <button id="drawerClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5" id="drawerBody"></div>
+</aside>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<nav class="sticky top-0 z-50 bg-brand-700 shadow-lg shadow-brand-900/20">
+    <div class="max-w-[1600px] mx-auto px-5 py-2.5 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5 flex-shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center"><i class="fas fa-hospital text-white text-base"></i></div>
+            <div class="hidden sm:block"><h1 class="text-white font-extrabold text-base leading-tight tracking-tight">MedBook</h1><p class="text-brand-200 text-[10px] font-medium">Hospital Management</p></div>
+        </div>
+        <div class="flex items-center gap-1 bg-brand-800/60 rounded-xl p-0.5">
+            <button class="nav-tab active px-3.5 py-2 rounded-lg text-sm font-semibold text-brand-300 hover:text-white transition-colors" data-page="booking"><i class="fas fa-calendar-check mr-1.5 text-xs"></i><span class="hidden sm:inline">Booking</span></button>
+            <button class="nav-tab px-3.5 py-2 rounded-lg text-sm font-semibold text-brand-300 hover:text-white transition-colors" data-page="scheduler"><i class="fas fa-table-columns mr-1.5 text-xs"></i><span class="hidden sm:inline">Scheduler</span></button>
+            <button class="nav-tab px-3.5 py-2 rounded-lg text-sm font-semibold text-brand-300 hover:text-white transition-colors" data-page="admin"><i class="fas fa-shield-halved mr-1.5 text-xs"></i><span class="hidden sm:inline">Admin</span></button>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <button id="navClear" class="text-[11px] font-semibold text-brand-200 hover:text-white bg-brand-800/60 hover:bg-brand-800 px-3 py-1.5 rounded-lg transition-colors"><i class="fas fa-trash-can mr-1"></i><span class="hidden sm:inline">Reset</span></button>
+        </div>
+    </div>
+</nav>
+
+
+<!-- ============================================================
+     PAGE: BOOKING
+     ============================================================ -->
+<div id="page-booking" class="page active">
+    <section class="w-full bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10"><div class="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div><div class="absolute bottom-0 right-20 w-96 h-96 bg-brand-300 rounded-full blur-3xl"></div></div>
+        <div class="max-w-[1440px] mx-auto px-6 py-10 relative z-10 flex flex-col lg:flex-row items-start gap-8">
+            <div class="flex-1">
+                <h2 class="text-white text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight">Book Your<br>Hospital Appointment</h2>
+                <p class="text-brand-100 mt-3 text-sm max-w-md leading-relaxed">Reliable hospital booking with verified doctors across multiple departments.</p>
+                <div class="flex gap-3 mt-6">
+                    <button id="heroBookBtn" class="px-5 py-2.5 bg-white text-brand-700 font-bold rounded-xl hover:bg-brand-50 transition-colors shadow-lg text-sm"><i class="fas fa-plus mr-2"></i>Book Appointment</button>
+                    <button id="heroCancelBtn" class="px-5 py-2.5 bg-white/15 text-white font-bold rounded-xl hover:bg-white/25 transition-colors border border-white/20 text-sm"><i class="fas fa-xmark mr-2"></i>Cancel</button>
+                </div>
+            </div>
+            <div class="w-full lg:w-72 bg-white/95 backdrop-blur rounded-2xl p-4 shadow-xl border border-brand-100">
+                <p class="font-bold text-brand-900 text-sm mb-3">Why families choose us</p>
+                <div class="space-y-2.5">
+                    <div class="flex items-start gap-2.5"><span class="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center shrink-0"><i class="fas fa-heart text-brand-600 text-[10px]"></i></span><p class="text-xs text-surface-600">Kid-friendly waiting rooms and patient staff</p></div>
+                    <div class="flex items-start gap-2.5"><span class="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center shrink-0"><i class="fas fa-clock text-brand-600 text-[10px]"></i></span><p class="text-xs text-surface-600">Same-week appointments across every department</p></div>
+                    <div class="flex items-start gap-2.5"><span class="w-7 h-7 rounded-lg bg-brand-50 flex items-center justify-center shrink-0"><i class="fas fa-shield-halved text-brand-600 text-[10px]"></i></span><p class="text-xs text-surface-600">Board-certified doctors, fully licensed hospitals</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <svg class="block w-full -mt-1" viewBox="0 0 1440 44" fill="#f1f5f9" preserveAspectRatio="none" style="height:24px"><path d="M0,22 C240,44 480,0 720,11 C960,22 1200,44 1440,16 L1440,44 L0,44 Z"></path></svg>
+    <section class="max-w-[1440px] mx-auto px-6 pb-10 -mt-2">
+        <div class="flex items-center justify-between mb-4"><h3 class="text-lg font-bold text-surface-800">Available Hospitals</h3><span id="hospitalCount" class="text-xs font-semibold text-surface-400">0 hospitals</span></div>
+        <div id="bookingGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+        <div id="bookingEmpty" class="hidden text-center py-16">
+            <div class="w-14 h-14 rounded-full bg-surface-100 flex items-center justify-center mx-auto mb-3"><i class="fas fa-hospital text-surface-300 text-xl"></i></div>
+            <p class="text-surface-500 font-semibold text-sm">No hospitals found</p>
+            <p class="text-surface-400 text-xs mt-1">Add hospitals from the Admin Panel first.</p>
+            <button class="mt-3 px-4 py-2 bg-brand-600 text-white font-semibold rounded-xl hover:bg-brand-700 transition-colors text-xs" onclick="switchPage('admin')">Go to Admin Panel</button>
+        </div>
+    </section>
+</div>
+
+
+<!-- ============================================================
+     PAGE: SCHEDULER (KANBAN)
+     ============================================================ -->
+<div id="page-scheduler" class="page">
+    <!-- Scheduler Analytics -->
+    <div class="bg-white border-b border-surface-100 flex-shrink-0">
+        <div class="max-w-[1800px] mx-auto flex items-center h-[72px] px-4 gap-2.5 overflow-x-auto" id="schedAnalytics"></div>
+    </div>
+    <!-- Scheduler Filters -->
+    <div class="bg-surface-50/80 border-b border-surface-100 flex-shrink-0 hidden md:block">
+        <div class="max-w-[1800px] mx-auto flex items-center h-[42px] px-4 gap-2 overflow-x-auto">
+            <span class="text-[9px] font-bold text-surface-300 uppercase tracking-widest whitespace-nowrap mr-1"><i class="fas fa-sliders text-[8px] mr-1"></i>Filters</span>
+            <select id="schedFilterHosp" class="form-input !h-7 !text-[11px] !py-0 !px-2 !pr-6 w-[150px]"><option value="">All Hospitals</option></select>
+            <select id="schedFilterDept" class="form-input !h-7 !text-[11px] !py-0 !px-2 !pr-6 w-[150px]"><option value="">All Departments</option></select>
+            <select id="schedFilterDay" class="form-input !h-7 !text-[11px] !py-0 !px-2 !pr-6 w-[120px]"><option value="">All Days</option><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select>
+            <select id="schedFilterShift" class="form-input !h-7 !text-[11px] !py-0 !px-2 !pr-6 w-[110px]"><option value="">All Shifts</option><option>Morning</option><option>Afternoon</option><option>Evening</option><option>Night</option></select>
+            <input id="schedSearch" type="text" placeholder="Search doctor..." class="form-input !h-7 !text-[11px] !py-0 !w-[160px]">
+            <button id="schedClearFilters" class="h-7 px-2.5 text-[10px] font-semibold text-brand-600 hover:bg-brand-50 rounded-lg transition-colors whitespace-nowrap"><i class="fas fa-rotate-left mr-1"></i>Reset</button>
+        </div>
+    </div>
+    <!-- Scheduler Body: Pool + Kanban -->
+    <div class="flex flex-1 overflow-hidden" style="height:calc(100vh - 60px - 72px - 42px)">
+        <!-- Doctor Pool -->
+        <aside id="schedulerPool" class="scheduler-pool w-[290px] flex-shrink-0 border-r border-surface-100 bg-white flex flex-col">
+            <div class="px-3 py-2.5 border-b border-surface-100 flex-shrink-0">
+                <div class="flex items-center justify-between mb-1.5"><h4 class="text-xs font-bold text-surface-800">Doctor Pool</h4><span id="poolCount" class="text-[10px] text-surface-400 font-semibold">0</span></div>
+                <input id="poolSearch" type="text" placeholder="Filter..." class="form-input !h-7 !text-[11px] !py-0">
+            </div>
+            <div class="flex-1 overflow-y-auto p-2 space-y-1.5" id="poolList"></div>
+        </aside>
+        <!-- Kanban Board -->
+        <main class="flex-1 overflow-hidden flex flex-col min-w-0">
+            <div class="flex-1 overflow-auto p-3" id="kanbanScroll">
+                <div class="flex gap-2.5" id="kanbanCols" style="min-width:max-content"></div>
+            </div>
+        </main>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     PAGE: ADMIN
+     ============================================================ -->
+<div id="page-admin" class="page">
+    <div class="max-w-[1440px] mx-auto px-6 py-8">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7">
+            <div><h2 class="text-2xl font-extrabold text-surface-900">Hospital Admin Panel</h2><p class="mt-1 text-surface-500 text-sm">Add, edit, and delete hospital information.</p></div>
+            <button id="adminNewBtn" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-lg shadow-brand-600/20"><i class="fas fa-plus"></i>Add New Hospital</button>
+        </div>
+        <div class="grid lg:grid-cols-[1fr_340px] gap-5">
+            <section class="bg-surface-900 rounded-2xl border border-surface-700 overflow-hidden shadow-xl">
+                <div class="border-b border-surface-700 px-5 py-4"><h3 class="text-base font-bold text-white">Hospital Information</h3><p class="mt-0.5 text-xs text-surface-400">Manage records, emergency availability, branches, departments, and doctors.</p></div>
+                <form id="hospitalForm" class="p-5 space-y-4 text-white" autocomplete="off">
+                    <div><div class="flex justify-between items-center mb-1"><label for="hospitalId" class="text-xs font-medium text-surface-300">Hospital ID</label><button type="button" id="genIdBtn" class="flex items-center gap-1 bg-surface-700 hover:bg-surface-600 text-surface-200 hover:text-white rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors"><i class="fas fa-rotate text-[9px]"></i>Generate</button></div><input id="hospitalId" type="text" disabled placeholder="Click Generate" class="form-input !bg-surface-800 !border-surface-600 !text-surface-400 !cursor-not-allowed"></div>
+                    <div><label for="hospitalName" class="block text-xs font-medium text-surface-300 mb-1">Hospital Name</label><input id="hospitalName" type="text" placeholder="e.g. City General Hospital" required class="form-input !bg-surface-800 !border-surface-600 !text-white"></div>
+                    <div><label for="hospitalLocation" class="block text-xs font-medium text-surface-300 mb-1">Main Location</label><input id="hospitalLocation" type="text" placeholder="e.g. Mumbai, Maharashtra" required class="form-input !bg-surface-800 !border-surface-600 !text-white"></div>
+                    <div class="flex items-center gap-3"><input id="hospitalEmergency" type="checkbox" class="h-4 w-4 rounded border-surface-600 text-brand-500 bg-surface-800"><label for="hospitalEmergency" class="text-xs font-medium text-surface-300">Emergency services available</label></div>
+                    <!-- Branches -->
+                    <div class="rounded-xl border border-surface-700 p-4 space-y-3">
+                        <div class="flex items-center justify-between"><div><h4 class="text-sm font-semibold text-white">Branches</h4><p class="text-[10px] text-surface-400">Satellite locations</p></div><button type="button" id="toggleBranch" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"><i class="fas fa-plus mr-1"></i>Add</button></div>
+                        <div id="branchArea" class="hidden"><div class="flex gap-2"><input id="branchInput" type="text" placeholder="Branch location..." class="form-input !bg-surface-800 !border-surface-600 !text-white flex-1 !text-xs"><button type="button" id="addBranchBtn" class="bg-surface-600 hover:bg-surface-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Add</button></div></div>
+                        <div id="branchesList" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <!-- Departments & Doctors -->
+                    <div class="rounded-xl border border-surface-700 bg-surface-800/50 p-4 space-y-3">
+                        <div class="flex items-center justify-between"><div><h4 class="text-sm font-semibold text-white">Departments & Doctors</h4><p class="text-[10px] text-surface-400">Create departments, assign doctors</p></div><button type="button" id="toggleDept" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"><i class="fas fa-plus mr-1"></i>Add Dept</button></div>
+                        <div id="deptArea" class="hidden space-y-2">
+                            <input id="deptInput" type="text" list="deptDL" placeholder="Search department..." class="form-input !bg-surface-800 !border-surface-600 !text-white !text-xs">
+                            <datalist id="deptDL"><option value="General Medicine"><option value="Cardiology"><option value="Neurology"><option value="Neurosurgery"><option value="Orthopedics"><option value="General Surgery"><option value="Pediatrics"><option value="Gynecology"><option value="Obstetrics"><option value="Dermatology"><option value="ENT (Ear, Nose & Throat)"><option value="Ophthalmology"><option value="Urology"><option value="Nephrology"><option value="Pulmonology"><option value="Gastroenterology"><option value="Endocrinology"><option value="Psychiatry"><option value="Psychology"><option value="Radiology"><option value="Pathology"><option value="Emergency Medicine"><option value="Anesthesiology"><option value="ICU (Intensive Care Unit)"><option value="Physiotherapy"><option value="Oncology"><option value="Dental"><option value="Plastic Surgery"><option value="Rheumatology"><option value="Infectious Diseases"></datalist>
+                            <button type="button" id="saveDeptBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Save Department</button>
+                        </div>
+                        <div id="docArea" class="hidden space-y-2">
+                            <p class="text-[10px] text-surface-400">Adding to: <strong id="docTarget" class="text-brand-400"></strong></p>
+                            <input id="docInput" type="text" placeholder="Doctor name..." class="form-input !bg-surface-800 !border-surface-600 !text-white !text-xs">
+                            <button type="button" id="saveDocBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">Add Doctor</button>
+                        </div>
+                        <div id="deptsContainer" class="space-y-2.5"></div>
+                    </div>
+                    <div id="adminErr" class="hidden text-red-400 text-xs font-medium"></div>
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" id="adminCancelBtn" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-surface-400 hover:text-white hover:bg-surface-700 transition-colors">Cancel</button>
+                        <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors"><i class="fas fa-save mr-1.5"></i>Save Hospital</button>
+                    </div>
+                </form>
+            </section>
+            <aside class="space-y-4">
+                <div class="bg-white rounded-2xl border border-surface-200 p-4 shadow-sm sticky top-20">
+                    <h3 class="text-sm font-bold text-surface-800 mb-0.5">Saved Hospitals</h3>
+                    <p class="text-[10px] text-surface-400 mb-3">Click Edit or Delete below.</p>
+                    <div id="adminPreview" class="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1"></div>
+                    <div id="adminEmpty" class="text-center py-8"><i class="fas fa-inbox text-surface-200 text-2xl mb-2"></i><p class="text-xs text-surface-400">No hospitals yet.</p></div>
+                </div>
+            </aside>
+        </div>
+    </section>
+</div>
+
+
+<!-- ============================================================
+     MODAL: BOOK APPOINTMENT
+     ============================================================ -->
+<div id="bookingModal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="p-5">
+            <div class="flex items-center justify-between mb-5"><h3 class="text-lg font-bold text-surface-800">Book Appointment</h3><button class="js-close-modal w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors" data-modal="bookingModal"><i class="fas fa-xmark"></i></button></div>
+            <form id="bookingForm" class="space-y-3" novalidate>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Full Name *</label><input id="bkName" type="text" class="form-input !text-xs" placeholder="Your full name"></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Email *</label><input id="bkEmail" type="email" class="form-input !text-xs" placeholder="you@example.com"></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Phone *</label><input id="bkPhone" type="tel" class="form-input !text-xs" placeholder="+91 943XX XXXXX"></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Address</label><input id="bkAddress" type="text" class="form-input !text-xs" placeholder="123 Main St"></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Hospital *</label><select id="bkHospital" class="form-input !text-xs"><option value="">Select</option></select></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Department *</label><select id="bkDepartment" class="form-input !text-xs"><option value="">Select</option></select></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Doctor *</label><select id="bkDoctor" class="form-input !text-xs"><option value="">Select</option></select></div>
+                    <div><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Time Slot *</label><select id="bkTime" class="form-input !text-xs"><option value="">Select</option><option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option><option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option><option>02:00 PM</option><option>02:30 PM</option><option>03:00 PM</option><option>03:30 PM</option><option>04:00 PM</option><option>04:30 PM</option></select></div>
+                    <div class="md:col-span-2"><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Date *</label><input id="bkDate" type="date" class="form-input !text-xs"></div>
+                    <div class="md:col-span-2"><label class="block text-[10px] font-semibold text-surface-500 mb-0.5">Reason *</label><textarea id="bkReason" rows="2" class="form-input !text-xs resize-none" placeholder="Describe symptoms..."></textarea></div>
+                </div>
+                <div id="bkErr" class="hidden text-red-500 text-xs font-medium p-2.5 bg-red-50 rounded-xl"></div>
+                <div class="flex gap-2 pt-1">
+                    <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm"><i class="fas fa-check mr-1.5"></i>Confirm</button>
+                    <button type="button" class="js-close-modal flex-1 bg-surface-100 hover:bg-surface-200 text-surface-600 font-semibold py-2.5 rounded-xl transition-colors text-sm" data-modal="bookingModal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: SCHEDULE ASSIGN / EDIT
+     ============================================================ -->
+<div id="scheduleModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:480px">
+        <div class="p-5" id="scheduleModalBody"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: VIEW APPOINTMENTS
+     ============================================================ -->
+<div id="aptsModal" class="modal-overlay">
+    <div class="modal-box" style="max-width:520px">
+        <div class="p-5">
+            <div class="flex items-center justify-between mb-4"><h3 class="text-base font-bold text-surface-800">Appointments</h3><button class="js-close-modal w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors" data-modal="aptsModal"><i class="fas fa-xmark"></i></button></div>
+            <div id="aptsList" class="space-y-2.5 max-h-[55vh] overflow-y-auto"></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* =============================================================
+   SECTION 1: CONSTANTS
+   ============================================================= */
+const STORAGE_KEY = 'AdminData';
+const APTS_KEY = 'BookedAppointments';
+const SCHED_KEY = 'DoctorSchedules';
+
+const DEPT_CODES = {
+    "General Medicine":"GMED","Cardiology":"CARD","Neurology":"NEUR","Neurosurgery":"NSURG","Orthopedics":"ORTH","General Surgery":"GSURG","Pediatrics":"PED","Gynecology":"GYN","Obstetrics":"OBS","Dermatology":"DERM","ENT (Ear, Nose & Throat)":"ENT","Ophthalmology":"OPTH","Urology":"URO","Nephrology":"NEPH","Pulmonology":"PULM","Gastroenterology":"GASTRO","Endocrinology":"ENDO","Psychiatry":"PSY","Psychology":"PSYCHO","Radiology":"RAD","Pathology":"PATH","Emergency Medicine":"EMR","Anesthesiology":"ANES","ICU (Intensive Care Unit)":"ICU","Physiotherapy":"PHYSIO","Oncology":"ONCO","Dental":"DENT","Plastic Surgery":"PLAST","Rheumatology":"RHEUM","Infectious Diseases":"ID"
+};
+
+const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+const DAY_LABELS = {monday:'Monday',tuesday:'Tuesday',wednesday:'Wednesday',thursday:'Thursday',friday:'Friday',saturday:'Saturday',sunday:'Sunday'};
+const SHIFTS = ['morning','afternoon','evening','night'];
+const SHIFT_META = {
+    morning:  {label:'Morning',  icon:'fa-sun',       color:'#d97706',bg:'#fffbeb',start:'06:00',end:'12:00'},
+    afternoon:{label:'Afternoon',icon:'fa-cloud-sun', color:'#ea580c',bg:'#fff7ed',start:'12:00',end:'18:00'},
+    evening:  {label:'Evening',  icon:'fa-moon',      color:'#6366f1',bg:'#eef2ff',start:'18:00',end:'00:00'},
+    night:    {label:'Night',    icon:'fa-star',      color:'#1e293b',bg:'#f1f5f9',start:'00:00',end:'06:00'}
+};
+
+
+/* =============================================================
+   SECTION 2: UTILITIES
+   ============================================================= */
+function randCode(n=5){return Math.random().toString(36).substring(2,n+2).toUpperCase()}
+function genHospId(){return 'HOSP-'+randCode(5)}
+function genDeptId(name,c){const code=DEPT_CODES[name]||'UNKN';return `DEPT-${code}-${String(c).padStart(3,'0')}`}
+function uid(){return 'id_'+Date.now().toString(36)+'_'+randCode(4)}
+
+function toMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return(h||0)*60+(m||0)}
+function overlaps(s1,e1,s2,e2){return toMin(s1)<toMin(e2)&&toMin(s2)<toMin(e1)}
+
+function showToast(msg,type='success',dur=3500){
+    const c=document.getElementById('toastContainer');
+    const t=document.createElement('div');
+    t.className=`toast toast-${type}`;
+    const icons={success:'fa-check-circle',error:'fa-circle-exclamation',info:'fa-info-circle',warning:'fa-triangle-exclamation'};
+    t.innerHTML=`<i class="fas ${icons[type]||icons.info}"></i><span style="flex:1">${msg}</span>`;
+    c.appendChild(t);
+    requestAnimationFrame(()=>t.classList.add('show'));
+    setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),350)},dur);
+}
+
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openDrawer(){document.getElementById('drawerBackdrop').classList.add('open');document.getElementById('drawerPanel').classList.add('open')}
+function closeDrawer(){document.getElementById('drawerPanel').classList.remove('open');document.getElementById('drawerBackdrop').classList.remove('open')}
+
+function getMonday(d){const date=new Date(d);const day=date.getDay();date.setDate(date.getDate()-day+(day===0?-6:1));date.setHours(0,0,0,0);return date}
+function fmtShort(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function dayKeyFromOffset(o){return DAYS[o]}
+
+function avatarFallback(name){const i=(name||'?').charAt(0).toUpperCase();return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="#e2e8f0" width="100" height="100" rx="20"/><text x="50" y="62" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="36" font-weight="600">${i}</text></svg>`)}`}
+
+
+/* =============================================================
+   SECTION 3: DATA LAYER
+   ============================================================= */
+function getHospitals(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch(e){return[]}}
+function saveHospitals(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
+function addHospital(h){const l=getHospitals();l.push(h);saveHospitals(l)}
+function updateHospital(id,d){const l=getHospitals();const i=l.findIndex(h=>h.id===id);if(i!==-1){l[i]=d;saveHospitals(l);return true}return false}
+function deleteHospital(id){saveHospitals(getHospitals().filter(h=>h.id!==id))}
+function findHospital(id){return getHospitals().find(h=>h.id===id)||null}
+
+function getAppointments(){try{return JSON.parse(localStorage.getItem(APTS_KEY))||[]}catch(e){return[]}}
+function saveAppointments(d){localStorage.setItem(APTS_KEY,JSON.stringify(d))}
+function addAppointment(a){const l=getAppointments();a.id='APT-'+randCode(6);a.bookedAt=new Date().toISOString();l.push(a);saveAppointments(l)}
+
+function getSchedules(){try{return JSON.parse(localStorage.getItem(SCHED_KEY))||[]}catch(e){return[]}}
+function saveSchedules(d){localStorage.setItem(SCHED_KEY,JSON.stringify(d))}
+function addSchedule(s){const l=getSchedules();l.push(s);saveSchedules(l)}
+function updateSchedule(id,d){const l=getSchedules();const i=l.findIndex(s=>s.id===id);if(i!==-1){l[i]=d;saveSchedules(l);return true}return false}
+function deleteSchedule(id){saveSchedules(getSchedules().filter(s=>s.id!==id))}
+
+function clearAllData(){localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(APTS_KEY);localStorage.removeItem(SCHED_KEY)}
+
+
+/* =============================================================
+   SECTION 4: FLATTEN DOCTORS FROM HOSPITAL DATA
+   Each doctor becomes: { key, name, hospitalId, hospitalName, departmentName, room }
+   ============================================================= */
+function flattenDoctors(){
+    const result=[];
+    getHospitals().forEach(h=>{
+        (h.departments||[]).forEach(dept=>{
+            (dept.doctors||[]).forEach(docName=>{
+                result.push({
+                    key: h.id+'::'+dept.name+'::'+docName,
+                    name: docName,
+                    hospitalId: h.id,
+                    hospitalName: h.name,
+                    departmentName: dept.name,
+                    room: 'R-'+randCode(3)
+                });
+            });
+        });
+    });
+    return result;
+}
+
+/** Get all unique departments across all hospitals */
+function allDepartments(){
+    const set=new Set();
+    getHospitals().forEach(h=>(h.departments||[]).forEach(d=>set.add(d.name)));
+    return [...set].sort();
+}
+
+
+/* =============================================================
+   SECTION 5: SCHEDULER — CONFLICT DETECTION
+   ============================================================= */
+function checkConflict(docKey, day, shift, startTime, endTime, excludeId){
+    const s1=startTime||SHIFT_META[shift].start;
+    const e1=endTime||SHIFT_META[shift].end;
+    for(const sch of getSchedules()){
+        if(sch.doctorKey!==docKey||sch.day!==day||sch.id===excludeId) continue;
+        const s2=sch.startTime||SHIFT_META[sch.shift].start;
+        const e2=sch.endTime||SHIFT_META[sch.shift].end;
+        if(overlaps(s1,e1,s2,e2)) return {conflict:true,existing:sch};
+    }
+    return {conflict:false,existing:null};
+}
+
+
+/* =============================================================
+   SECTION 6: SCHEDULER — FILTER LOGIC
+   ============================================================= */
+let schedFilters={hospital:'',department:'',day:'',shift:'',search:''};
+let poolSearch='';
+
+function filterFlatDoctors(){
+    let docs=flattenDoctors();
+    if(schedFilters.hospital) docs=docs.filter(d=>d.hospitalId===schedFilters.hospital);
+    if(schedFilters.department) docs=docs.filter(d=>d.departmentName===schedFilters.department);
+    if(schedFilters.search){const q=schedFilters.search.toLowerCase();docs=docs.filter(d=>d.name.toLowerCase().includes(q)||d.departmentName.toLowerCase().includes(q)||d.hospitalName.toLowerCase().includes(q))}
+    return docs;
+}
+
+function filterSchedules(){
+    let list=getSchedules();
+    if(schedFilters.hospital) list=list.filter(s=>s.hospitalId===schedFilters.hospital);
+    if(schedFilters.department) list=list.filter(s=>s.departmentName===schedFilters.department);
+    if(schedFilters.day) list=list.filter(s=>s.day===schedFilters.day);
+    if(schedFilters.shift) list=list.filter(s=>s.shift===schedFilters.shift);
+    if(schedFilters.search){const q=schedFilters.search.toLowerCase();list=list.filter(s=>s.doctorName.toLowerCase().includes(q)||s.departmentName.toLowerCase().includes(q))}
+    return list;
+}
+
+function filterPoolDoctors(){
+    let docs=filterFlatDoctors();
+    if(poolSearch){const q=poolSearch.toLowerCase();docs=docs.filter(d=>d.name.toLowerCase().includes(q)||d.specialization?.toLowerCase().includes(q))}
+    return docs;
+}
+
+
+/* =============================================================
+   SECTION 7: SCHEDULER — RENDER ANALYTICS
+   ============================================================= */
+function renderSchedAnalytics(){
+    const el=document.getElementById('schedAnalytics');
+    const allDocs=filterFlatDoctors();
+    const schedList=filterSchedules();
+    const scheduledKeys=new Set(schedList.map(s=>s.doctorKey));
+    const available=allDocs.filter(d=>!scheduledKeys.has(d.key)).length;
+    const scheduled=allDocs.filter(d=>scheduledKeys.has(d.key)).length;
+    const todayIdx=(new Date().getDay()+6)%7;
+    const todayKey=DAYS[todayIdx];
+    const todayApts=getAppointments().filter(a=>a.date===todayKey&&a.status!=='cancelled').length;
+    let conflicts=0;
+    schedList.forEach(s=>{if(checkConflict(s.doctorKey,s.day,s.shift,s.startTime,s.endTime,s.id).conflict)conflicts++});
+
+    const cards=[
+        {label:'Total Doctors',val:allDocs.length,icon:'fa-user-doctor',color:'#10b981',bg:'#ecfdf5'},
+        {label:'Available',val:available,icon:'fa-circle-check',color:'#059669',bg:'#d1fae5'},
+        {label:'Scheduled',val:scheduled,icon:'fa-calendar-check',color:'#2563eb',bg:'#dbeafe'},
+        {label:"Today's Apts",val:todayApts,icon:'fa-clock',color:'#d97706',bg:'#fffbeb'},
+        {label:'Conflicts',val:conflicts,icon:'fa-triangle-exclamation',color:conflicts?'#dc2626':'#94a3b8',bg:conflicts?'#fee2e2':'#f1f5f9'}
+    ];
+    el.innerHTML=cards.map((c,i)=>`
+        <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white border border-surface-100 min-w-[150px] flex-shrink-0 anim-fade-up" style="animation-delay:${i*40}ms">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:${c.bg}"><i class="fas ${c.icon} text-xs" style="color:${c.color}"></i></div>
+            <div><div class="text-base font-extrabold text-surface-900 leading-tight">${c.val}</div><div class="text-[9px] font-semibold text-surface-400 uppercase tracking-wider">${c.label}</div></div>
+        </div>`).join('');
+}
+
+
+/* =============================================================
+   SECTION 8: SCHEDULER — RENDER DOCTOR POOL
+   ============================================================= */
+function renderPool(){
+    const docs=filterPoolDoctors();
+    document.getElementById('poolCount').textContent=docs.length+' doctors';
+    const el=document.getElementById('poolList');
+
+    if(!docs.length){el.innerHTML=`<div class="text-center py-10"><div class="w-12 h-12 rounded-full bg-surface-50 flex items-center justify-center mx-auto mb-2"><i class="fas fa-user-doctor text-surface-200 text-lg"></i></div><p class="text-xs text-surface-400 font-medium">No doctors</p><p class="text-[10px] text-surface-300 mt-0.5">Add hospitals & doctors in Admin</p></div>`;return}
+
+    el.innerHTML=docs.map((d,i)=>{
+        const scheduledKeys=new Set(getSchedules().map(s=>s.doctorKey));
+        const isScheduled=scheduledKeys.has(d.key);
+        const statusCls=isScheduled?'st-scheduled':'st-available';
+        const statusTxt=isScheduled?'Scheduled':'Available';
+        return `
+        <div class="draggable-card bg-white border border-surface-100 rounded-xl p-2.5 card-lift anim-fade-up" style="animation-delay:${Math.min(i*25,250)}ms" data-doc-key="${d.key}" draggable="true">
+            <div class="flex items-start gap-2">
+                <img src="https://picsum.photos/seed/${encodeURIComponent(d.key)}/80/80.jpg" class="w-8 h-8 rounded-lg object-cover bg-surface-100 flex-shrink-0" onerror="this.onerror=null;this.src='${avatarFallback(d.name)}'">
+                <div class="flex-1 min-w-0">
+                    <div class="text-[11px] font-bold text-surface-900 truncate leading-tight">${d.name}</div>
+                    <div class="text-[10px] text-surface-400 truncate mt-0.5">${d.departmentName}</div>
+                    <span class="status-badge ${statusCls} mt-1"><span class="dot"></span>${statusTxt}</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 mt-1.5 text-[9px] text-surface-300"><i class="fas fa-hospital text-[7px]"></i><span class="truncate">${d.hospitalName}</span></div>
+            <div class="flex gap-1.5 mt-2">
+                <button class="js-pool-assign flex-1 h-6 text-[10px] font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors" data-doc-key="${d.key}"><i class="fas fa-plus text-[8px] mr-0.5"></i>Assign</button>
+                <button class="js-pool-view-apt h-6 w-6 flex items-center justify-center rounded-lg border border-surface-200 text-surface-400 hover:text-brand-600 hover:bg-brand-50 transition-colors" data-doc-key="${d.key}" title="View"><i class="fas fa-calendar-day text-[9px]"></i></button>
+            </div>
+        </div>`}).join('');
+}
+
+
+/* =============================================================
+   SECTION 9: SCHEDULER — RENDER KANBAN BOARD
+   ============================================================= */
+let weekStart=getMonday(new Date());
+
+function renderBoard(){
+    const cols=document.getElementById('kanbanCols');
+    const filtered=filterSchedules();
+    const today=new Date();today.setHours(0,0,0,0);
+
+    let html='';
+    for(let offset=0;offset<7;offset++){
+        const date=new Date(weekStart);date.setDate(date.getDate()+offset);
+        const dayKey=DAYS[offset];
+        const isToday=date.getTime()===today.getTime();
+        const isPast=date<today;
+
+        html+=`<div class="flex-shrink-0" style="width:230px">`;
+        html+=`<div class="rounded-xl p-2.5 mb-2 bg-white/80 backdrop-blur border border-surface-100 ${isToday?'today-col':''}">
+            <div class="flex items-center justify-between">
+                <div><div class="text-xs font-bold ${isToday?'text-brand-600':'text-surface-800'}">${DAY_LABELS[dayKey]}</div><div class="text-[10px] ${isToday?'text-brand-500 font-semibold':'text-surface-400'} mt-0.5">${fmtShort(date)}</div></div>
+                <div class="flex items-center gap-1.5">${isToday?'<span class="text-[8px] font-bold uppercase tracking-widest text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full">Now</span>':''}<span class="text-[10px] font-bold text-surface-300">${filtered.filter(s=>s.day===dayKey).length}</span></div>
+            </div></div>`;
+
+        html+=`<div class="space-y-1.5 ${isPast?'opacity-50':''}">`;
+        SHIFTS.forEach(shift=>{
+            const m=SHIFT_META[shift];
+            const slots=filtered.filter(s=>s.day===dayKey&&s.shift===shift);
+            html+=`<div class="rounded-xl border border-surface-100 bg-white overflow-hidden">
+                <div class="flex items-center justify-between px-2.5 py-1 border-b border-surface-50">
+                    <div class="flex items-center gap-1"><i class="fas ${m.icon} text-[9px]" style="color:${m.color}"></i><span class="text-[9px] font-bold uppercase tracking-wider text-surface-500">${m.label}</span></div>
+                    <span class="text-[9px] font-mono text-surface-300">${m.start}–${m.end}</span>
+                </div>
+                <div class="drop-zone p-1.5 space-y-1" data-day="${dayKey}" data-shift="${shift}">`;
+            if(!slots.length){
+                html+=`<div class="flex items-center justify-center py-4 text-surface-200"><div class="text-center"><i class="fas fa-grip-vertical text-xs mb-0.5 opacity-30"></i><p class="text-[8px]">Drop here</p></div></div>`;
+            } else {
+                slots.forEach((sch,si)=>{
+                    const {conflict}=checkConflict(sch.doctorKey,sch.day,sch.shift,sch.startTime,sch.endTime,sch.id);
+                    const bdr=conflict?'border-danger-300 bg-red-50/30':'border-surface-100';
+                    html+=`
+                    <div class="draggable-card bg-white border ${bdr} rounded-lg p-2 anim-fade-up ${conflict?'animate-[pulseConflict_1.5s_infinite]':''}" style="animation-delay:${si*30}ms" data-doc-key="${sch.doctorKey}" data-sched-id="${sch.id}" draggable="true">
+                        <div class="flex items-start gap-1.5">
+                            <img src="https://picsum.photos/seed/${encodeURIComponent(sch.doctorKey)}/60/60.jpg" class="w-6 h-6 rounded-md object-cover bg-surface-100 flex-shrink-0" onerror="this.onerror=null;this.src='${avatarFallback(sch.doctorName)}'">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1 flex-wrap"><span class="text-[10px] font-bold text-surface-900 truncate">${sch.doctorName}</span>${conflict?'<span class="status-badge st-conflict" style="padding:1px 5px;font-size:8px"><span class="dot"></span>Conflict</span>':''}</div>
+                                <div class="text-[9px] text-surface-400 truncate">${sch.departmentName}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-1 text-[8px] text-surface-400">
+                            <span><i class="fas fa-hospital text-[7px]"></i> ${sch.hospitalName.split(' ').slice(0,2).join(' ')}</span>
+                            <span><i class="fas fa-door-open text-[7px]"></i> ${sch.room||'—'}</span>
+                            <span class="font-mono"><i class="fas fa-clock text-[7px]"></i> ${sch.startTime||m.start}–${sch.endTime||m.end}</span>
+                        </div>
+                        <div class="flex items-center justify-between mt-1.5">
+                            <span class="text-[8px] text-surface-300"><i class="fas fa-users text-[7px]"></i> ${sch.patientCount||0} pts</span>
+                            <div class="flex gap-0.5">
+                                <button class="js-bd-view w-5 h-5 flex items-center justify-center rounded text-surface-300 hover:text-brand-600 hover:bg-brand-50 transition-colors" data-doc-key="${sch.doctorKey}" data-day="${sch.day}" title="View"><i class="fas fa-calendar-day text-[8px]"></i></button>
+                                <button class="js-bd-edit w-5 h-5 flex items-center justify-center rounded text-surface-300 hover:text-brand-600 hover:bg-brand-50 transition-colors" data-sched-id="${sch.id}" title="Edit"><i class="fas fa-pen text-[7px]"></i></button>
+                                <button class="js-bd-del w-5 h-5 flex items-center justify-center rounded text-surface-300 hover:text-red-500 hover:bg-red-50 transition-colors" data-sched-id="${sch.id}" title="Delete"><i class="fas fa-trash-can text-[7px]"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            html+=`</div></div>`;
+        });
+        html+=`</div></div>`;
+    }
+    cols.innerHTML=html;
+    bindDragEvents();
+}
+
+
+/* =============================================================
+   SECTION 10: SCHEDULER — DRAG & DROP
+   ============================================================= */
+let dragState={active:false,docKey:null,schedId:null,srcEl:null};
+
+function bindDragEvents(){
+    document.querySelectorAll('#poolList .draggable-card[draggable], #kanbanCols .draggable-card[draggable]').forEach(el=>{
+        el.removeEventListener('dragstart',onDragStart);
+        el.addEventListener('dragstart',onDragStart);
+        el.removeEventListener('dragend',onDragEnd);
+        el.addEventListener('dragend',onDragEnd);
+    });
+    document.querySelectorAll('.drop-zone').forEach(z=>{
+        z.removeEventListener('dragover',onDragOver);
+        z.addEventListener('dragover',onDragOver);
+        z.removeEventListener('dragenter',onDragEnter);
+        z.addEventListener('dragenter',onDragEnter);
+        z.removeEventListener('dragleave',onDragLeave);
+        z.addEventListener('dragleave',onDragLeave);
+        z.removeEventListener('drop',onDrop);
+        z.addEventListener('drop',onDrop);
+    });
+}
+
+function onDragStart(e){
+    dragState={active:true,docKey:this.dataset.docKey,schedId:this.dataset.schedId||null,srcEl:this};
+    this.classList.add('drag-source');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',this.dataset.docKey);
+}
+function onDragEnd(e){
+    this.classList.remove('drag-source');
+    document.querySelectorAll('.drop-zone').forEach(z=>z.classList.remove('drag-valid','drag-invalid'));
+    dragState={active:false,docKey:null,schedId:null,srcEl:null};
+}
+function onDragOver(e){e.preventDefault();e.dataTransfer.dropEffect='move'}
+function onDragEnter(e){
+    e.preventDefault();
+    const z=e.currentTarget;
+    if(!dragState.docKey)return;
+    const{conflict}=checkConflict(dragState.docKey,z.dataset.day,z.dataset.shift,SHIFT_META[z.dataset.shift].start,SHIFT_META[z.dataset.shift].end,dragState.schedId);
+    z.classList.remove('drag-valid','drag-invalid');
+    z.classList.add(conflict?'drag-invalid':'drag-valid');
+}
+function onDragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))e.currentTarget.classList.remove('drag-valid','drag-invalid')}
+
+function onDrop(e){
+    e.preventDefault();
+    const z=e.currentTarget;
+    z.classList.remove('drag-valid','drag-invalid');
+    const docKey=e.dataTransfer.getData('text/plain')||dragState.docKey;
+    if(!docKey)return;
+    const day=z.dataset.day, shift=z.dataset.shift, m=SHIFT_META[shift];
+
+    // If moving existing schedule
+    if(dragState.schedId){
+        const sch=getSchedules().find(s=>s.id===dragState.schedId);
+        if(sch){
+            const{conflict,existing}=checkConflict(docKey,day,shift,m.start,m.end,dragState.schedId);
+            if(conflict){const doc=flattenDoctors().find(d=>d.key===docKey);showToast(`Conflict: ${doc?doc.name:'Doctor'} already scheduled on ${DAY_LABELS[day]} ${SHIFT_META[existing.shift].label} (${existing.startTime||SHIFT_META[existing.shift].start}–${existing.endTime||SHIFT_META[existing.shift].end}).`,'error',5000);return}
+            updateSchedule(dragState.schedId,{...sch,day,shift,startTime:m.start,endTime:m.end});
+            const doc=flattenDoctors().find(d=>d.key===docKey);
+            showToast(`Moved ${doc?doc.name:'doctor'} to ${DAY_LABELS[day]} ${m.label}`);
+            renderScheduler();return;
+        }
+    }
+
+    // New assignment
+    const{conflict,existing}=checkConflict(docKey,day,shift,m.start,m.end);
+    if(conflict){
+        const doc=flattenDoctors().find(d=>d.key===docKey);
+        showToast(`Conflict: ${doc?doc.name:'Doctor'} is already on ${DAY_LABELS[day]} ${SHIFT_META[existing.shift].label} (${existing.startTime||SHIFT_META[existing.shift].start}–${existing.endTime||SHIFT_META[existing.shift].end}). Assignment prevented.`,'error',6000);
+        return;
+    }
+    const doc=flattenDoctors().find(d=>d.key===docKey);
+    addSchedule({id:uid(),doctorKey:docKey,doctorName:doc?doc.name:'Unknown',hospitalId:doc?doc.hospitalId:'',hospitalName:doc?doc.hospitalName:'',departmentName:doc?doc.departmentName:'',day,shift,startTime:m.start,endTime:m.end,room:doc?doc.room:'',patientCount:0});
+    showToast(`${doc?doc.name:'Doctor'} assigned to ${DAY_LABELS[day]} ${m.label}`);
+    renderScheduler();
+}
+
+
+/* =============================================================
+   SECTION 11: SCHEDULER — MODALS (Assign / Edit / Delete)
+   ============================================================= */
+function openAssignModal(docKey){
+    const doc=flattenDoctors().find(d=>d.key===docKey);
+    if(!doc)return;
+    const body=document.getElementById('scheduleModalBody');
+    body.innerHTML=`
+        <div class="flex items-center justify-between mb-5"><div><h3 class="text-base font-bold text-surface-900">Assign Schedule</h3><p class="text-xs text-surface-400 mt-0.5">${doc.name}</p></div><button class="js-close-modal w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100" data-modal="scheduleModal"><i class="fas fa-xmark"></i></button></div>
+        <div class="flex items-center gap-2.5 p-3 bg-surface-50 rounded-xl mb-4">
+            <img src="https://picsum.photos/seed/${encodeURIComponent(doc.key)}/80/80.jpg" class="w-10 h-10 rounded-xl object-cover bg-surface-100" onerror="this.onerror=null;this.src='${avatarFallback(doc.name)}'">
+            <div><div class="text-sm font-bold text-surface-900">${doc.name}</div><div class="text-xs text-surface-400">${doc.departmentName} &middot; ${doc.hospitalName}</div></div>
+        </div>
+        <div class="space-y-3">
+            <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Day</label><select id="smDay" class="form-input !text-xs">${DAYS.map(d=>`<option value="${d}">${DAY_LABELS[d]}</option>`).join('')}</select></div>
+            <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Shift</label><select id="smShift" class="form-input !text-xs">${SHIFTS.map(s=>`<option value="${s}">${SHIFT_META[s].label} (${SHIFT_META[s].start} – ${SHIFT_META[s].end})</option>`).join('')}</select></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Start</label><input type="time" id="smStart" value="${SHIFT_META.morning.start}" class="form-input !text-xs"></div>
+                <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">End</label><input type="time" id="smEnd" value="${SHIFT_META.morning.end}" class="form-input !text-xs"></div>
+            </div>
+            <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Room</label><input type="text" id="smRoom" value="${doc.room}" class="form-input !text-xs"></div>
+        </div>
+        <div class="flex gap-2 mt-5">
+            <button id="smSave" class="flex-1 h-9 text-xs font-bold rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors">Assign</button>
+            <button class="js-close-modal flex-1 h-9 text-xs font-semibold rounded-xl border border-surface-200 text-surface-600 hover:bg-surface-50 transition-colors" data-modal="scheduleModal">Cancel</button>
+        </div>`;
+    document.getElementById('smShift').addEventListener('change',function(){const m=SHIFT_META[this.value];document.getElementById('smStart').value=m.start;document.getElementById('smEnd').value=m.end});
+    document.getElementById('smSave').addEventListener('click',()=>saveScheduleFromModal(docKey,null));
+    openModal('scheduleModal');
+}
+
+function openEditModal(schedId){
+    const sch=getSchedules().find(s=>s.id===schedId);
+    if(!sch)return;
+    const doc=flattenDoctors().find(d=>d.key===sch.doctorKey);
+    const body=document.getElementById('scheduleModalBody');
+    body.innerHTML=`
+        <div class="flex items-center justify-between mb-5"><div><h3 class="text-base font-bold text-surface-900">Edit Schedule</h3><p class="text-xs text-surface-400 mt-0.5">${sch.doctorName}</p></div><button class="js-close-modal w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100" data-modal="scheduleModal"><i class="fas fa-xmark"></i></button></div>
+        <div class="flex items-center gap-2.5 p-3 bg-surface-50 rounded-xl mb-4">
+            <img src="https://picsum.photos/seed/${encodeURIComponent(sch.doctorKey)}/80/80.jpg" class="w-10 h-10 rounded-xl object-cover bg-surface-100" onerror="this.onerror=null;this.src='${avatarFallback(sch.doctorName)}'">
+            <div><div class="text-sm font-bold text-surface-900">${sch.doctorName}</div><div class="text-xs text-surface-400">${sch.departmentName}</div></div>
+        </div>
+        <div class="space-y-3">
+            <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Day</label><select id="smDay" class="form-input !text-xs">${DAYS.map(d=>`<option value="${d}" ${sch.day===d?'selected':''}>${DAY_LABELS[d]}</option>`).join('')}</select></div>
+            <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Shift</label><select id="smShift" class="form-input !text-xs">${SHIFTS.map(s=>`<option value="${s}" ${sch.shift===s?'selected':''}>${SHIFT_META[s].label} (${SHIFT_META[s].start} – ${SHIFT_META[s].end})</option>`).join('')}</select></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Start</label><input type="time" id="smStart" value="${sch.startTime||SHIFT_META[sch.shift].start}" class="form-input !text-xs"></div>
+                <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">End</label><input type="time" id="smEnd" value="${sch.endTime||SHIFT_META[sch.shift].end}" class="form-input !text-xs"></div>
+            </div>
+            <div><label class="block text-[10px] font-bold text-surface-500 uppercase tracking-wider mb-1">Room</label><input type="text" id="smRoom" value="${sch.room||''}" class="form-input !text-xs"></div>
+        </div>
+        <div class="flex gap-2 mt-5">
+            <button id="smSave" class="flex-1 h-9 text-xs font-bold rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors">Save Changes</button>
+            <button class="js-close-modal flex-1 h-9 text-xs font-semibold rounded-xl border border-surface-200 text-surface-600 hover:bg-surface-50 transition-colors" data-modal="scheduleModal">Cancel</button>
+        </div>`;
+    document.getElementById('smShift').addEventListener('change',function(){const m=SHIFT_META[this.value];document.getElementById('smStart').value=m.start;document.getElementById('smEnd').value=m.end});
+    document.getElementById('smSave').addEventListener('click',()=>saveScheduleFromModal(sch.doctorKey,schedId));
+    openModal('scheduleModal');
+}
+
+function openDeleteModal(schedId){
+    const sch=getSchedules().find(s=>s.id===schedId);
+    if(!sch)return;
+    const m=SHIFT_META[sch.shift];
+    const body=document.getElementById('scheduleModalBody');
+    body.innerHTML=`
+        <div class="flex items-center justify-between mb-5"><h3 class="text-base font-bold text-surface-900">Delete Schedule</h3><button class="js-close-modal w-8 h-8 rounded-lg flex items-center justify-center text-surface-400 hover:text-surface-700 hover:bg-surface-100" data-modal="scheduleModal"><i class="fas fa-xmark"></i></button></div>
+        <div class="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-xl mb-4">
+            <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0"><i class="fas fa-triangle-exclamation text-red-500"></i></div>
+            <div><p class="text-xs font-semibold text-red-800">This cannot be undone</p><p class="text-[10px] text-red-600 mt-0.5">The schedule will be permanently removed.</p></div>
+        </div>
+        <div class="p-3 bg-surface-50 rounded-xl text-xs space-y-1.5">
+            <div class="font-bold text-surface-900">${sch.doctorName}</div>
+            <div class="text-surface-500"><i class="fas fa-calendar text-[9px] mr-1"></i>${DAY_LABELS[sch.day]} &middot; ${m.label}</div>
+            <div class="text-surface-500"><i class="fas fa-clock text-[9px] mr-1"></i><span class="font-mono">${sch.startTime||m.start} – ${sch.endTime||m.end}</span></div>
+            <div class="text-surface-500"><i class="fas fa-door-open text-[9px] mr-1"></i>Room ${sch.room||'—'}</div>
+        </div>
+        <div class="flex gap-2 mt-5">
+            <button id="smDelete" class="flex-1 h-9 text-xs font-bold rounded-xl bg-red-600 text-white hover:bg-red-700 transition-colors">Delete Schedule</button>
+            <button class="js-close-modal flex-1 h-9 text-xs font-semibold rounded-xl border border-surface-200 text-surface-600 hover:bg-surface-50 transition-colors" data-modal="scheduleModal">Cancel</button>
+        </div>`;
+    document.getElementById('smDelete').addEventListener('click',()=>{
+        deleteSchedule(schedId);
+        showToast(`Schedule removed for ${sch.doctorName}`);
+        closeModal('scheduleModal');
+        renderScheduler();
+    });
+    openModal('scheduleModal');
+}
+
+function saveScheduleFromModal(docKey,schedId){
+    const day=document.getElementById('smDay').value;
+    const shift=document.getElementById('smShift').value;
+    const startTime=document.getElementById('smStart').value;
+    const endTime=document.getElementById('smEnd').value;
+    const room=document.getElementById('smRoom').value.trim();
+    if(!day||!shift||!startTime||!endTime){showToast('Fill all required fields.','warning');return}
+    if(toMin(endTime)<=toMin(startTime)){showToast('End must be after start time.','warning');return}
+    const{conflict,existing}=checkConflict(docKey,day,shift,startTime,endTime,schedId);
+    if(conflict){const cm=SHIFT_META[existing.shift];showToast(`Conflict: Already on ${DAY_LABELS[day]} ${cm.label} (${existing.startTime||cm.start}–${existing.endTime||cm.end}).`,'error',5000);return}
+    const doc=flattenDoctors().find(d=>d.key===docKey);
+    const data={doctorKey:docKey,doctorName:doc?doc.name:'Unknown',hospitalId:doc?doc.hospitalId:'',hospitalName:doc?doc.hospitalName:'',departmentName:doc?doc.departmentName:'',day,shift,startTime,endTime,room};
+    if(schedId){updateSchedule(schedId,{...getSchedules().find(s=>s.id===schedId),...data});showToast('Schedule updated.')}
+    else{addSchedule({...data,id:uid(),patientCount:0});showToast(`${doc?doc.name:'Doctor'} assigned to ${DAY_LABELS[day]} ${SHIFT_META[shift].label}`)}
+    closeModal('scheduleModal');
+    renderScheduler();
+}
+
+
+/* =============================================================
+   SECTION 12: SCHEDULER — DRAWER (View Appointments)
+   ============================================================= */
+function openDrawerForDoctor(docKey,day){
+    const doc=flattenDoctors().find(d=>d.key===docKey);
+    if(!doc)return;
+    const docSchedules=getSchedules().filter(s=>s.doctorKey===docKey);
+    const apts=getAppointments().filter(a=>a.doctor===doc.name&&(!day||a.date===day));
+
+    document.getElementById('drawerTitle').textContent=day?`${DAY_LABELS[day]} Schedule`:'Doctor Schedule';
+    document.getElementById('drawerSub').textContent=doc.name;
+
+    const statusStyle={confirmed:{bg:'#d1fae5',color:'#047857'},pending:{bg:'#fffbeb',color:'#92400e'},cancelled:{bg:'#f1f5f9',color:'#475569'}};
+    const payStyle={paid:{bg:'#d1fae5',color:'#047857'},unpaid:{bg:'#fee2e2',color:'#991b1b'},refunded:{bg:'#f1f5f9',color:'#475569'}};
+
+    let html=`
+    <div class="p-3 m-0 mb-4 bg-surface-50 rounded-xl">
+        <div class="flex items-center gap-2.5">
+            <img src="https://picsum.photos/seed/${encodeURIComponent(docKey)}/80/80.jpg" class="w-11 h-11 rounded-xl object-cover bg-surface-100" onerror="this.onerror=null;this.src='${avatarFallback(doc.name)}'">
+            <div class="flex-1 min-w-0"><div class="text-sm font-bold text-surface-900">${doc.name}</div><div class="text-xs text-surface-400">${doc.departmentName} &middot; ${doc.specialization||doc.hospitalName}</div><div class="text-[10px] text-surface-300 mt-0.5">${doc.hospitalName} &middot; Room ${doc.room}</div></div>
+        </div>
+    </div>
+    <div class="px-1 pb-3">
+        <h4 class="text-[10px] font-bold text-surface-800 uppercase tracking-wider flex items-center gap-1 mb-2"><i class="fas fa-calendar-alt text-brand-500 text-[9px]"></i>Schedules</h4>
+        ${docSchedules.length===0?'<p class="text-xs text-surface-400 text-center py-3">No schedules</p>'
+        :`<div class="space-y-1.5">${docSchedules.map(s=>{const m=SHIFT_META[s.shift];return`<div class="flex items-center gap-2 p-2 bg-white border border-surface-100 rounded-lg"><div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:${m.bg}"><i class="fas ${m.icon} text-[9px]" style="color:${m.color}"></i></div><div class="flex-1 min-w-0"><div class="text-[10px] font-semibold text-surface-800">${DAY_LABELS[s.day]} &middot; ${m.label}</div><div class="text-[9px] text-surface-400 font-mono">${s.startTime||m.start}–${s.endTime||m.end}</div></div></div>`}).join('')}</div>`}
+    </div>
+    <div class="px-1 pb-4">
+        <h4 class="text-[10px] font-bold text-surface-800 uppercase tracking-wider flex items-center gap-1 mb-2"><i class="fas fa-clipboard-list text-brand-500 text-[9px]"></i>${day?DAY_LABELS[day]:'All'} Appointments <span class="text-surface-300 ml-1">${apts.length}</span></h4>
+        ${apts.length===0?`<div class="text-center py-6"><i class="fas fa-clipboard text-surface-200 text-xl mb-2"></i><p class="text-xs text-surface-400">No appointments</p></div>`
+        :`<div class="space-y-1.5">${apts.map(a=>{const ss=statusStyle[a.status]||statusStyle.pending;const ps=payStyle[a.payment]||payStyle.unpaid;return`<div class="p-2.5 bg-white border border-surface-100 rounded-lg"><div class="flex items-start justify-between"><div><div class="text-[11px] font-semibold text-surface-900">${a.name}</div><div class="text-[9px] text-surface-400 font-mono mt-0.5"><i class="fas fa-clock text-[7px] mr-0.5"></i>${a.timeSlot||a.time||''} &middot; ${a.date||''}</div></div><div class="flex flex-col items-end gap-0.5"><span class="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style="background:${ss.bg};color:${ss.color}">${a.status}</span><span class="text-[8px] font-semibold" style="color:${ps.color}">${a.payment}</span></div></div>${a.reason?`<p class="text-[9px] text-surface-400 mt-1.5 italic truncate">${a.reason}</p>`:''}</div>`}).join('')}</div>`}
+    </div>`;
+
+    document.getElementById('drawerBody').innerHTML=html;
+    openDrawer();
+}
+
+
+/* =============================================================
+   SECTION 13: SCHEDULER — MASTER RENDER
+   ============================================================= */
+function renderScheduler(){
+    renderSchedAnalytics();
+    renderPool();
+    renderBoard();
+    // Update week label
+    const end=new Date(weekStart);end.setDate(end.getDate()+6);
+    const todayMonday=getMonday(new Date());
+    let label=weekStart.getTime()===todayMonday.getTime()?'This Week':`${fmtShort(weekStart)} – ${fmtShort(end)}`;
+    // Week label could be displayed somewhere; keeping it simple for now
+}
+
+function populateSchedulerFilters(){
+    const hs=document.getElementById('schedFilterHosp');
+    hs.innerHTML='<option value="">All Hospitals</option>';
+    getHospitals().forEach(h=>{hs.innerHTML+=`<option value="${h.id}">${h.name}</option>`});
+    const ds=document.getElementById('schedFilterDept');
+    ds.innerHTML='<option value="">All Departments</option>';
+    allDepartments().forEach(d=>{ds.innerHTML+=`<option value="${d}">${d}</option>`});
+}
+
+
+/* =============================================================
+   SECTION 14: ADMIN PANEL LOGIC
+   ============================================================= */
+function createEmptyState(){return{id:'',name:'',location:'',emergency:false,branches:[],departments:[]}}
+let adminState=createEmptyState();
+let editingId=null;
+let activeDept=null;
+let deptCtr=0,docCtr=0;
+
+function resetAdminForm(){
+    adminState=createEmptyState();editingId=null;activeDept=null;deptCtr=0;docCtr=0;
+    document.getElementById('hospitalId').value='';document.getElementById('hospitalName').value='';document.getElementById('hospitalLocation').value='';document.getElementById('hospitalEmergency').checked=false;document.getElementById('branchInput').value='';document.getElementById('deptInput').value='';document.getElementById('docInput').value='';document.getElementById('branchesList').innerHTML='';document.getElementById('deptsContainer').innerHTML='';document.getElementById('branchArea').classList.add('hidden');document.getElementById('deptArea').classList.add('hidden');document.getElementById('docArea').classList.add('hidden');document.getElementById('adminErr').classList.add('hidden');
+}
+
+function renderBranchChip(name){
+    const c=document.createElement('span');c.className='branch-chip';
+    c.innerHTML=`<i class="fas fa-location-dot text-[9px] text-brand-400"></i>${name}<button type="button" class="remove-branch" data-branch="${name}"><i class="fas fa-xmark text-[9px]"></i></button>`;
+    document.getElementById('branchesList').appendChild(c);
+}
+
+function renderDeptCard(dept){
+    const c=document.createElement('div');c.className='dept-card';c.dataset.deptName=dept.name;
+    let docsHtml=dept.doctors.length?dept.doctors.map(d=>`<span class="doctor-chip"><i class="fas fa-user-doctor text-[9px] text-brand-400"></i>${d}<button type="button" class="remove-doctor" data-dept="${dept.name}" data-doctor="${d}"><i class="fas fa-xmark text-[9px]"></i></button></span>`).join(''):'<span class="text-surface-500 text-[10px] italic">No doctors yet.</span>';
+    c.innerHTML=`<div class="flex items-center justify-between mb-2"><div><h5 class="font-bold text-white text-xs">${dept.name}</h5><span class="text-[9px] text-surface-500 font-mono">${dept.departmentId}</span></div><div class="flex gap-1.5"><button type="button" class="add-doc-to-dept text-[10px] bg-brand-600 hover:bg-brand-700 text-white px-2 py-1 rounded-lg font-semibold transition-colors" data-dept="${dept.name}"><i class="fas fa-user-plus mr-1"></i>Add Dr</button><button type="button" class="remove-dept text-[10px] bg-red-500/20 hover:bg-red-500/40 text-red-400 px-1.5 py-1 rounded-lg transition-colors" data-dept="${dept.name}"><i class="fas fa-trash-can"></i></button></div></div><div class="flex flex-wrap gap-1.5">${docsHtml}</div>`;
+    document.getElementById('deptsContainer').appendChild(c);
+}
+
+function renderAdminPreview(){
+    const c=document.getElementById('adminPreview');const e=document.getElementById('adminEmpty');const hs=getHospitals();
+    if(!hs.length){c.innerHTML='';e.classList.remove('hidden');return}
+    e.classList.add('hidden');
+    c.innerHTML=hs.map(h=>`<div class="preview-card"><div class="flex items-start justify-between gap-1.5 mb-1.5"><div class="min-w-0"><p class="text-[9px] font-mono text-surface-400">${h.id}</p><h4 class="font-bold text-surface-800 text-xs truncate">${h.name}</h4><p class="text-[10px] text-surface-500"><i class="fas fa-location-dot mr-0.5 text-[8px]"></i>${h.location}</p></div><span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${h.emergency?'bg-green-100 text-green-700':'bg-surface-100 text-surface-500'}">${h.emergency?'24/7':'No ER'}</span></div><p class="text-[9px] text-surface-400"><i class="fas fa-building mr-0.5 text-[8px]"></i>${h.departments.length} depts &middot; ${h.departments.reduce((s,d)=>s+d.doctors.length,0)} doctors</p><div class="flex gap-1.5 mt-2"><button class="edit-hosp flex-1 text-[10px] font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 py-1 rounded-lg transition-colors" data-id="${h.id}"><i class="fas fa-pen mr-0.5"></i>Edit</button><button class="del-hosp flex-1 text-[10px] font-semibold bg-red-50 text-red-600 hover:bg-red-100 py-1 rounded-lg transition-colors" data-id="${h.id}"><i class="fas fa-trash-can mr-0.5"></i>Delete</button></div></div>`).join('');
+}
+
+function saveAdminForm(){
+    const err=document.getElementById('adminErr');
+    if(!adminState.id){err.textContent='Generate a Hospital ID.';err.classList.remove('hidden');return}
+    if(!adminState.name.trim()){err.textContent='Hospital name required.';err.classList.remove('hidden');return}
+    if(!adminState.location.trim()){err.textContent='Location required.';err.classList.remove('hidden');return}
+    if(!adminState.departments.length){err.textContent='Add at least one department.';err.classList.remove('hidden');return}
+    err.classList.add('hidden');
+    if(editingId===null){addHospital(structuredClone(adminState));showToast('Hospital added!')}
+    else{updateHospital(editingId,structuredClone(adminState));showToast('Hospital updated!')}
+    resetAdminForm();renderAdminPreview();renderBookingHospitals();populateSchedulerFilters();
+}
+
+function editHospital(id){
+    const h=findHospital(id);if(!h)return;
+    editingId=id;adminState=structuredClone(h);
+    document.getElementById('hospitalId').value=h.id;document.getElementById('hospitalName').value=h.name;document.getElementById('hospitalLocation').value=h.location;document.getElementById('hospitalEmergency').checked=h.emergency;
+    document.getElementById('branchesList').innerHTML='';h.branches.forEach(b=>renderBranchChip(b));
+    document.getElementById('deptsContainer').innerHTML='';deptCtr=0;h.departments.forEach(d=>{deptCtr++;renderDeptCard(d)});
+    docCtr=h.departments.reduce((s,d)=>s+d.doctors.length,0);
+    window.scrollTo({top:0,behavior:'smooth'});showToast('Editing: '+h.name,'info');
+}
+
+
+/* =============================================================
+   SECTION 15: BOOKING PAGE LOGIC
+   ============================================================= */
+function renderBookingHospitals(){
+    const grid=document.getElementById('bookingGrid');const empty=document.getElementById('bookingEmpty');const cnt=document.getElementById('hospitalCount');const hs=getHospitals();
+    cnt.textContent=hs.length+' hospital'+(hs.length!==1?'s':'');
+    if(!hs.length){grid.innerHTML='';empty.classList.remove('hidden');return}
+    empty.classList.add('hidden');
+    grid.innerHTML=hs.map((h,i)=>{
+        const dc=h.departments.length;const docCnt=h.departments.reduce((s,d)=>s+d.doctors.length,0);
+        return`<div class="bg-white rounded-2xl overflow-hidden border border-surface-200 card-lift anim-fade-up" style="animation-delay:${i*50}ms"><div class="hosp-img-placeholder"><div class="text-center"><i class="fas fa-hospital text-2xl mb-1.5 opacity-30"></i><p>${h.name.split(' ').slice(0,2).join(' ')}</p></div></div><div class="p-3.5 space-y-1.5"><h4 class="font-bold text-surface-800 text-sm leading-tight line-clamp-2">${h.name}</h4><p class="text-xs text-surface-500 flex items-center gap-1"><i class="fas fa-location-dot text-[8px]"></i>${h.location}</p><div class="flex items-center gap-3 text-[10px] text-surface-400"><span><i class="fas fa-building text-[8px] mr-0.5"></i>${dc} depts</span><span><i class="fas fa-user-doctor text-[8px] mr-0.5"></i>${docCnt} docs</span></div><span class="text-[10px] font-semibold ${h.emergency?'text-green-600':'text-surface-400'}">${h.emergency?'<i class="fas fa-circle-check mr-0.5"></i>Emergency':'<i class="fas fa-circle-xmark mr-0.5"></i>No ER'}</span><div class="flex gap-1.5 pt-1"><button class="book-hosp-btn flex-1 text-[10px] font-bold bg-brand-50 text-brand-700 hover:bg-brand-100 py-1.5 rounded-xl transition-colors" data-hosp-id="${h.id}"><i class="fas fa-calendar-plus mr-1"></i>Book</button><button class="view-apts-hosp text-[10px] font-semibold bg-surface-50 text-surface-500 hover:bg-surface-100 hover:text-surface-700 py-1.5 px-2.5 rounded-xl transition-colors" data-hosp-id="${h.id}"><i class="fas fa-list"></i></button><button class="sched-hosp-btn text-[10px] font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 py-1.5 px-2.5 rounded-xl transition-colors" data-hosp-id="${h.id}" title="Open Scheduler"><i class="fas fa-table-columns"></i></button></div></div></div>`}).join('');
+}
+
+function openBookingForHospital(hospId){
+    const h=findHospital(hospId);if(!h)return;
+    document.getElementById('bookingForm').reset();document.getElementById('bkErr').classList.add('hidden');
+    document.getElementById('bkDate').min=new Date().toISOString().split('T')[0];
+    const hs=document.getElementById('bkHospital');hs.innerHTML=`<option value="${h.id}">${h.name}</option>`;
+    const ds=document.getElementById('bkDepartment');ds.innerHTML='<option value="">Select</option>';
+    h.departments.forEach(d=>{ds.innerHTML+=`<option value="${d.name}">${d.name}</option>`});
+    document.getElementById('bkDoctor').innerHTML='<option value="">Select</option>';
+    openModal('bookingModal');
+}
+
+function handleBookingSubmit(e){
+    e.preventDefault();const err=document.getElementById('bkErr');
+    const name=document.getElementById('bkName').value.trim();
+    const email=document.getElementById('bkEmail').value.trim();
+    const phone=document.getElementById('bkPhone').value.trim();
+    const address=document.getElementById('bkAddress').value.trim();
+    const hospId=document.getElementById('bkHospital').value;
+    const dept=document.getElementById('bkDepartment').value;
+    const doc=document.getElementById('bkDoctor').value;
+    const time=document.getElementById('bkTime').value;
+    const date=document.getElementById('bkDate').value;
+    const reason=document.getElementById('bkReason').value.trim();
+    function showErr(m){err.textContent=m;err.classList.remove('hidden')}
+    if(!name){showErr('Name is required.');return}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showErr('Invalid email.');return}
+    if(!/^[6-9]\d{9}$/.test(phone.replace(/\s/g,''))){showErr('Invalid 10-digit phone.');return}
+    if(!hospId){showErr('Select hospital.');return}
+    if(!dept){showErr('Select department.');return}
+    if(!doc){showErr('Select doctor.');return}
+    if(!time){showErr('Select time slot.');return}
+    if(!date){showErr('Select date.');return}
+    if(reason.length<10){showErr('Reason needs 10+ characters.');return}
+    const h=findHospital(hospId);
+    addAppointment({name,email,phone,address,hospitalId:hospId,hospitalName:h?h.name:'',department:dept,doctor:doc,timeSlot:time,date,reason,status:'confirmed',payment:'unpaid'});
+    closeModal('bookingModal');showToast(`Booked with ${doc} at ${h?h.name:'hospital'}!`);document.getElementById('bookingForm').reset();
+}
+
+function showHospitalAppointments(hospId){
+    const h=findHospital(hospId);if(!h)return;
+    const apts=getAppointments().filter(a=>a.hospitalId===hospId);
+    const c=document.getElementById('aptsList');
+    if(!apts.length){c.innerHTML=`<div class="text-center py-8"><i class="fas fa-calendar-xmark text-surface-200 text-2xl mb-2"></i><p class="text-surface-500 font-semibold text-xs">No appointments for ${h.name}</p></div>`}
+    else{c.innerHTML=apts.map(a=>`<div class="p-3 bg-surface-50 rounded-xl border border-surface-100"><div class="flex items-start justify-between"><div><p class="font-bold text-surface-800 text-xs">${a.name}</p><p class="text-[10px] text-surface-400 mt-0.5">${a.email} &middot; ${a.phone}</p></div><span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700">${a.department}</span></div><div class="flex flex-wrap gap-3 mt-1.5 text-[10px] text-surface-500"><span><i class="fas fa-user-doctor mr-0.5 text-[8px]"></i>${a.doctor}</span><span><i class="fas fa-clock mr-0.5 text-[8px]"></i>${a.timeSlot||a.time||''}</span><span><i class="fas fa-calendar mr-0.5 text-[8px]"></i>${a.date||''}</span></div>${a.reason?`<p class="text-[10px] text-surface-400 mt-1.5 italic">${a.reason}</p>`:''}</div>`).join('')}
+    openModal('aptsModal');
+}
+
+
+/* =============================================================
+   SECTION 16: PAGE NAVIGATION
+   ============================================================= */
+function switchPage(name){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    const page=document.getElementById('page-'+name);if(page)page.classList.add('active');
+    const tab=document.querySelector(`.nav-tab[data-page="${name}"]`);if(tab)tab.classList.add('active');
+    if(name==='booking')renderBookingHospitals();
+    if(name==='admin')renderAdminPreview();
+    if(name==='scheduler'){populateSchedulerFilters();renderScheduler()}
+}
+
+
+/* =============================================================
+   SECTION 17: EVENT BINDING
+   ============================================================= */
+function bindEvents(){
+    /* Navigation */
+    document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>switchPage(t.dataset.page)));
+    document.getElementById('navClear').addEventListener('click',()=>{if(!confirm('Clear ALL data?'))return;clearAllData();resetAdminForm();renderAdminPreview();renderBookingHospitals();populateSchedulerFilters();renderScheduler();showToast('All data cleared.','error')});
+
+    /* Admin: ID gen */
+    document.getElementById('genIdBtn').addEventListener('click',()=>{const id=genHospId();document.getElementById('hospitalId').value=id;adminState.id=id});
+    document.getElementById('hospitalName').addEventListener('input',function(){adminState.name=this.value});
+    document.getElementById('hospitalLocation').addEventListener('input',function(){adminState.location=this.value});
+    document.getElementById('hospitalEmergency').addEventListener('change',function(){adminState.emergency=this.checked});
+
+    /* Admin: Branches */
+    document.getElementById('toggleBranch').addEventListener('click',()=>{document.getElementById('branchArea').classList.toggle('hidden');document.getElementById('branchInput').focus()});
+    document.getElementById('addBranchBtn').addEventListener('click',()=>{const v=document.getElementById('branchInput').value.trim();if(!v)return;if(adminState.branches.includes(v)){showToast('Branch exists.','error');return}adminState.branches.push(v);renderBranchChip(v);document.getElementById('branchInput').value='';document.getElementById('branchInput').focus()});
+    document.getElementById('branchInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('addBranchBtn').click()}});
+
+    /* Admin: Departments */
+    document.getElementById('toggleDept').addEventListener('click',()=>{const a=document.getElementById('deptArea');const h=a.classList.contains('hidden');a.classList.toggle('hidden');if(h)document.getElementById('docArea').classList.add('hidden');if(h)document.getElementById('deptInput').focus()});
+    document.getElementById('saveDeptBtn').addEventListener('click',()=>{const v=document.getElementById('deptInput').value.trim();if(!v){showToast('Enter dept name.','error');return}if(adminState.departments.find(d=>d.name===v)){showToast('Dept exists.','error');document.getElementById('deptInput').value='';return}deptCtr++;const dept={departmentId:genDeptId(v,deptCtr),name:v,doctors:[]};adminState.departments.push(dept);renderDeptCard(dept);document.getElementById('deptInput').value='';document.getElementById('deptInput').focus();showToast(`"${v}" added.`)});
+    document.getElementById('deptInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('saveDeptBtn').click()}});
+
+    /* Admin: Doctors */
+    document.getElementById('saveDocBtn').addEventListener('click',()=>{const v=document.getElementById('docInput').value.trim();if(!v){showToast('Enter doctor name.','error');return}if(!activeDept){showToast('Select department first.','error');return}const dept=adminState.departments.find(d=>d.name===activeDept);if(!dept){showToast('Dept not found.','error');return}if(dept.doctors.includes(v)){showToast('Doctor exists in dept.','error');document.getElementById('docInput').value='';return}docCtr++;dept.doctors.push(v);const card=document.querySelector(`.dept-card[data-dept-name="${activeDept}"]`);if(card){const it=card.querySelector('.italic');if(it)it.remove();const chip=document.createElement('span');chip.className='doctor-chip';chip.innerHTML=`<i class="fas fa-user-doctor text-[9px] text-brand-400"></i>${v}<button type="button" class="remove-doctor" data-dept="${activeDept}" data-doctor="${v}"><i class="fas fa-xmark text-[9px]"></i></button>`;card.querySelector('.flex.flex-wrap').appendChild(chip)}document.getElementById('docInput').value='';document.getElementById('docInput').focus();showToast(`Dr. ${v} added to ${activeDept}.`)});
+    document.getElementById('docInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();document.getElementById('saveDocBtn').click()}});
+
+    /* Admin: Save/Cancel/New */
+    document.getElementById('hospitalForm').addEventListener('submit',e=>{e.preventDefault();saveAdminForm()});
+    document.getElementById('adminCancelBtn').addEventListener('click',()=>{if(editingId&&!confirm('Discard changes?'))return;resetAdminForm();showToast('Form cleared.','info')});
+    document.getElementById('adminNewBtn').addEventListener('click',()=>{resetAdminForm();window.scrollTo({top:0,behavior:'smooth'});document.getElementById('hospitalName').focus()});
+
+    /* Admin: Preview delegation */
+    document.getElementById('adminPreview').addEventListener('click',e=>{
+        const eb=e.target.closest('.edit-hosp');if(eb){editHospital(eb.dataset.id);return}
+        const db=e.target.closest('.del-hosp');if(db){const h=findHospital(db.dataset.id);if(!h||!confirm(`Delete "${h.name}"?`))return;deleteHospital(db.dataset.id);renderAdminPreview();renderBookingHospitals();populateSchedulerFilters();showToast('Hospital deleted.','error');if(editingId===db.dataset.id)resetAdminForm();return}
+    });
+
+    /* Booking: Hero buttons */
+    document.getElementById('heroBookBtn').addEventListener('click',()=>{const hs=getHospitals();if(!hs.length){showToast('No hospitals. Add from Admin first.','error');return}document.getElementById('bookingForm').reset();document.getElementById('bkErr').classList.add('hidden');document.getElementById('bkDate').min=new Date().toISOString().split('T')[0];const sel=document.getElementById('bkHospital');sel.innerHTML='<option value="">Select Hospital</option>';hs.forEach(h=>{sel.innerHTML+=`<option value="${h.id}">${h.name}</option>`});document.getElementById('bkDepartment').innerHTML='<option value="">Select</option>';document.getElementById('bkDoctor').innerHTML='<option value="">Select</option>';openModal('bookingModal')});
+    document.getElementById('heroCancelBtn').addEventListener('click',()=>{const apts=getAppointments();if(!apts.length){showToast('No appointments to cancel.','info');return}const last=apts[apts.length-1];if(confirm(`Cancel last appointment?\n\nDoctor: ${last.doctor}\nDate: ${last.date}\nTime: ${last.timeSlot||last.time||''}`)){saveAppointments(apts.filter(a=>a.id!==last.id));showToast('Appointment cancelled.','error')}});
+
+    /* Booking: Modal */
+    document.getElementById('bookingForm').addEventListener('submit',handleBookingSubmit);
+    document.getElementById('bkHospital').addEventListener('change',function(){const h=findHospital(this.value);const ds=document.getElementById('bkDepartment');ds.innerHTML='<option value="">Select</option>';document.getElementById('bkDoctor').innerHTML='<option value="">Select</option>';if(h)h.departments.forEach(d=>{ds.innerHTML+=`<option value="${d.name}">${d.name}</option>`})});
+    document.getElementById('bkDepartment').addEventListener('change',function(){const h=findHospital(document.getElementById('bkHospital').value);const ds=document.getElementById('bkDoctor');ds.innerHTML='<option value="">Select</option>';if(h){const dept=h.departments.find(d=>d.name===this.value);if(dept)dept.doctors.forEach(doc=>{ds.innerHTML+=`<option value="${doc}">${doc}</option>`})}});
+
+    /* Scheduler: Filters */
+    document.getElementById('schedFilterHosp').addEventListener('change',function(){schedFilters.hospital=this.value;renderScheduler()});
+    document.getElementById('schedFilterDept').addEventListener('change',function(){schedFilters.department=this.value;renderScheduler()});
+    document.getElementById('schedFilterDay').addEventListener('change',function(){schedFilters.day=this.value.toLowerCase();renderScheduler()});
+    document.getElementById('schedFilterShift').addEventListener('change',function(){schedFilters.shift=this.value.toLowerCase();renderScheduler()});
+    document.getElementById('schedSearch').addEventListener('input',debounce(function(){schedFilters.search=this.value;renderScheduler()},200));
+    document.getElementById('poolSearch').addEventListener('input',debounce(function(){poolSearch=this.value;renderPool()},150));
+    document.getElementById('schedClearFilters').addEventListener('click',()=>{schedFilters={hospital:'',department:'',day:'',shift:'',search:''};poolSearch='';document.getElementById('schedFilterHosp').value='';document.getElementById('schedFilterDept').value='';document.getElementById('schedFilterDay').value='';document.getElementById('schedFilterShift').value='';document.getElementById('schedSearch').value='';document.getElementById('poolSearch').value='';renderScheduler();showToast('Filters reset.','info')});
+
+    /* Scheduler: Week nav */
+    // (Week nav buttons would go here if we add them to the scheduler header)
+
+    /* Drawer close */
+    document.getElementById('drawerClose').addEventListener('click',closeDrawer);
+    document.getElementById('drawerBackdrop').addEventListener('click',closeDrawer);
+
+    /* Modal close delegation */
+    document.addEventListener('click',e=>{
+        if(e.target.closest('.js-close-modal'))closeModal(e.target.closest('.js-close-modal').dataset.modal);
+        if(e.target.classList.contains('modal-overlay')&&!e.target.closest('.modal-box')){e.target.classList.remove('open')}
+    });
+
+    /* Global delegated clicks for dynamic elements */
+    document.addEventListener('click',e=>{
+        // Remove branch
+        const rb=e.target.closest('.remove-branch');if(rb){adminState.branches=adminState.branches.filter(b=>b!==rb.dataset.branch);rb.closest('.branch-chip').remove();return}
+        // Remove dept
+        const rd=e.target.closest('.remove-dept');if(rd){adminState.departments=adminState.departments.filter(d=>d.name!==rd.dataset.dept);rd.closest('.dept-card').remove();if(activeDept===rd.dataset.dept){activeDept=null;document.getElementById('docArea').classList.add('hidden')}return}
+        // Add doctor to dept
+        const ad=e.target.closest('.add-doc-to-dept');if(ad){activeDept=ad.dataset.dept;document.getElementById('docTarget').textContent=activeDept;document.getElementById('docArea').classList.remove('hidden');document.getElementById('docInput').focus();return}
+        // Remove doctor
+        const rmd=e.target.closest('.remove-doctor');if(rmd){const dn=rmd.dataset.dept,dn2=rmd.dataset.doctor;const dept=adminState.departments.find(d=>d.name===dn);if(dept){dept.doctors=dept.doctors.filter(d=>d!==dn2);rmd.closest('.doctor-chip').remove();if(!dept.doctors.length){const card=document.querySelector(`.dept-card[data-dept-name="${dn}"]`);if(card)card.querySelector('.flex.flex-wrap').innerHTML='<span class="text-surface-500 text-[10px] italic">No doctors yet.</span>'}}return}
+        // Booking: hospital cards
+        const bh=e.target.closest('.book-hosp-btn');if(bh){openBookingForHospital(bh.dataset.hospId);return}
+        const va=e.target.closest('.view-apts-hosp');if(va){showHospitalAppointments(va.dataset.hospId);return}
+        const sh=e.target.closest('.sched-hosp-btn');if(sh){schedFilters.hospital=sh.dataset.hospId;switchPage('scheduler');return}
+        // Pool: assign / view
+        const pa=e.target.closest('.js-pool-assign');if(pa){openAssignModal(pa.dataset.docKey);return}
+        const pv=e.target.closest('.js-pool-view-apt');if(pv){openDrawerForDoctor(pv.dataset.docKey,null);return}
+        // Board: view / edit / delete
+        const bv=e.target.closest('.js-bd-view');if(bv){openDrawerForDoctor(bv.dataset.docKey,bv.dataset.day);return}
+        const be=e.target.closest('.js-bd-edit');if(be){openEditModal(be.dataset.schedId);return}
+        const bd=e.target.closest('.js-bd-del');if(bd){openDeleteModal(bd.dataset.schedId);return}
+    });
+
+    /* Keyboard */
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));closeDrawer()}});
+}
+
+function debounce(fn,ms){let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn.apply(this,a),ms)}}
+
+
+/* =============================================================
+   SECTION 18: INITIALIZATION
+   ============================================================= */
+function init(){
+    bindEvents();
+    renderAdminPreview();
+    renderBookingHospitals();
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
+
+

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+      <title>Countries API Explorer</title>
+
+      <script src="https://cdn.tailwindcss.com"></script>
+   </head>
+
+   <body class="bg-blue-100 min-h-screen p-6">
+      <div class="max-w-7xl mx-auto">
+         <!-- Header -->
+         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+               Countries API Explorer
+            </h1>
+
+            <p class="text-gray-500">
+               Change the UI controls and the API query will change
+            </p>
+         </div>
+
+         <!-- FILTER PANEL -->
+         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-5"> Filters</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+               <!-- Search -->
+               <div>
+                  <label class="block font-semibold mb-1"> Search </label>
+
+                  <input id="search-input" type="text" placeholder="e.g. germ, can, stan..." class="w-full border border-gray-300 rounded-lg p-2"/>
+               </div>
+
+               <!-- Search type -->
+               <div>
+                  <label class="block font-semibold mb-1"> Search Type </label>
+
+                  <select id="search-type" class="w-full border border-gray-300 rounded-lg p-2">
+                     <option value="q">All searchable properties</option>
+                     <option value="names.common">Common name</option>
+                     <option value="names.official">Official name</option>
+                  </select>
+               </div>
+
+               <!-- Region -->
+               <div>
+                  <label class="block font-semibold mb-1"> Region </label>
+
+                  <select
+                     id="region-select"
+                     class="w-full border border-gray-300 rounded-lg p-2"
+                  >
+                     <option value="">All regions</option>
+                     <option value="Africa">Africa</option>
+                     <option value="Americas">Americas</option>
+                     <option value="Antarctic">Antarctic</option>
+                     <option value="Asia">Asia</option>
+                     <option value="Europe">Europe</option>
+                     <option value="Oceania">Oceania</option>
+                  </select>
+               </div>
+
+               <!-- Limit -->
+               <div>
+                  <label class="block font-semibold mb-1"> Limit </label>
+
+                  <select
+                     id="limit-select"
+                     class="w-full border border-gray-300 rounded-lg p-2">
+                     <option value="10">10</option>
+                     <option value="25" selected>25</option>
+                     <option value="50">50</option>
+                     <option value="75">75</option>
+                     <option value="100">100</option>
+                  </select>
+               </div>
+
+               <!-- Offset -->
+               <div>
+                  <label class="block font-semibold mb-1"> Offset </label>
+                  <input id="offset-input" type="number" min="0" value="0" class="w-full border border-gray-300 rounded-lg p-2"/>
+               </div>
+
+               <!-- Response fields -->
+               <div>
+                  <label class="block font-semibold mb-1">
+                     Response Fields
+                  </label>
+
+                  <input id="response-fields" type="text" placeholder="names.common,flag.emoji" class="w-full border border-gray-300 rounded-lg p-2" />
+               </div>
+
+   
+
+            <!-- Pretty -->
+            <div class="mt-5 flex items-center gap-2">
+               <input id="pretty-checkbox" type="checkbox" class="w-4 h-4" />
+
+               <label for="pretty-checkbox"> Pretty response </label>
+            </div>
+
+            <!-- Buttons -->
+            <div class="mt-5 flex gap-3">
+               <button id="apply-btn" class="bg-gray-700 hover:bg-gray-800 text-white px-5 py-2 rounded-lg font-semibold">
+                  Apply Filters
+               </button>
+
+               <button id="reset-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-5 py-2 rounded-lg font-semibold" >
+                  Reset
+               </button>
+            </div>
+         </div>
+
+         <!-- GENERATED URL -->
+         <div class="bg-gray-600 text-blue-400 rounded-xl p-5 mb-6 mt-10">
+            <p class="text-white mb-2">API Request</p>
+
+            <code id="api-url" class="break-all"></code>
+         </div>
+
+
+
+
+         <div id="status" class="mb-5 font-semibold"></div>
+
+
+         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- SIDEBAR -->
+            <aside class="bg-white rounded-xl shadow-lg p-5">
+               <h2 class="text-xl font-bold mb-4">Countries</h2>
+               <ul id="country-names" class="space-y-1 max-h-[700px] overflow-y-auto" ></ul>
+            </aside>
+
+            <main class="lg:col-span-3">
+               <div
+                  id="country-list"
+                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+               ></div>
+            </main>
+         </div>
+      </div>
+
+      <!-- COUNTRY TEMPLATE -->
+
+      <template id="country-template">
+         <article  class="p-5 rounded-xl bg-white border border-gray-200 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center gap-3 mb-4">
+               <span data-flag class="text-4xl"></span>
+               <div>
+                  <h2 data-common-name class="text-xl font-bold text-green-800"></h2>
+                  <p data-official-name class="text-sm text-gray-500"></p>
+               </div>
+            </div>
+
+            <div class="mb-2">
+               <span class="font-semibold"> Capital: </span>
+               <span data-capital></span>
+            </div>
+
+            <div class="mb-2">
+               <span class="font-semibold"> Region: </span>
+               <span data-region></span>
+            </div>
+
+            <div class="mb-2">
+               <span class="font-semibold"> Subregion: </span>
+               <span data-subregion></span>
+            </div>
+
+            <div class="mb-2">
+               <span class="font-semibold"> Population: </span>
+               <span data-population></span>
+            </div>
+
+            <div class="mt-3">
+               <span class="font-semibold"> Alternate names: </span>
+               <div data-alternates></div>
+            </div>
+         </article>
+      </template>
+
+      <script type="module" src="./index.js"></script>
+   </body>
+</html>

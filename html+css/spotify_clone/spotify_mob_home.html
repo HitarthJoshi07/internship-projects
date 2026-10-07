@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="spotify_help.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- <script src="./spotify.js"></script> -->
+    <style>
+        body {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+
+<body class="bg-[#000000]">
+
+    <nav class="w-full bg-black h-12 sm:h-16 px-4 md:px-6 flex items-center justify-between">
+
+        <!-- Left -->
+        <div class="flex items-center gap-3">
+
+            <!-- Spotify Logo -->
+            <a href="#" class="flex items-center gap-2">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+                    <path
+                        d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.52 17.34a.75.75 0 0 1-1.03.25c-2.82-1.72-6.37-2.11-10.57-1.15a.75.75 0 0 1-.34-1.46c4.59-1.05 8.51-.6 11.69 1.34a.75.75 0 0 1 .25 1.02zm1.47-3.28a.94.94 0 0 1-1.29.31c-3.23-1.98-8.16-2.56-11.98-1.4a.94.94 0 0 1-.55-1.8c4.36-1.33 9.78-.68 13.52 1.62a.94.94 0 0 1 .3 1.27zm.13-3.41C15.3 8.38 8.96 8.17 5.3 9.28a1.13 1.13 0 0 1-.66-2.17c4.2-1.28 11.18-1.03 15.62 1.57a1.13 1.13 0 0 1-1.14 1.97z" />
+                </svg>
+
+                <span class="hidden sm:block text-white text-xl font-bold">
+                    Spotify
+                </span>
+
+            </a>
+
+            <!-- Home -->
+            <button class="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 fill-white" viewBox="0 0 24 24">
+                    <path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z" />
+                </svg>
+
+            </button>
+
+            <!-- Search -->
+            <div
+                class="hidden md:flex items-center bg-neutral-800 rounded-full px-4  h-11 w-70 lg:w-[290px] xl:w-[400px] transition-all duration-300">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 invisible  text-gray-400" fill="none"
+                    stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3-3" />
+
+                </svg>
+
+                <input type="text" placeholder="What do you want to play?"
+                    class="flex-1 bg-transparent outline-none text-white placeholder-gray-400 px-3" />
+
+            </div>
+
+        </div>
+
+        <!-- Desktop Right -->
+        <div class="hidden lg:flex items-center gap-2 xl:gap-4">
+
+            <a href="#" class="text-gray-400 text-[12px] lg:[16px] xl:text-[18px] hover:text-white font-semibold">
+                Premium
+            </a>
+
+            <a href="#" class="text-gray-400 text-[12px] lg:[16px] xl:text-[18px] hover:text-white font-semibold">
+                Support
+            </a>
+
+            <a href="#" class="text-gray-400 text-[12px] lg:[16px] xl:text-[18px] hover:text-white font-semibold">
+                Download
+            </a>
+
+            <div class="w-px h-6 bg-white"></div>
+            <!-- Install App -->
+            <a href="#" class="flex items-center gap-1 text-gray-300 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" stroke="currentColor"
+                    stroke-width="2" viewBox="0 0 24 24">
+
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M5 20h14" />
+
+                </svg>
+
+                <span>Install App</span>
+
+            </a>
+
+            <!-- Sign Up -->
+            <a href="#" class="text-gray-300 hover:text-white font-semibold text-[16px] xl:text-[20px]">
+                Sign up
+            </a>
+
+            <!-- Login -->
+            <button
+                class="bg-white text-black rounded-full px-8 py-3 font-semibold hover:scale-105 transition text-nowrap text-[14px] lg:text-[18px]">
+
+                Log in
+
+            </button>
+
+        </div>
+
+        <!-- Mobile Right -->
+        <div class="flex items-center gap-3 lg:hidden">
+
+            <!-- Search Button -->
+            <button class="md:hidden w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" stroke="currentColor"
+                    stroke-width="2" viewBox="0 0 24 24">
+
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3-3" />
+
+                </svg>
+
+            </button>
+
+            <!-- Hamburger -->
+            <button class="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center">
+
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" stroke="currentColor"
+                    stroke-width="2" viewBox="0 0 24 24">
+
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+
+                </svg>
+
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <section class="sm:hidden">
+        <div class="grid grid-cols-2 text-[14px] col gap-y-1 gap-x-1.5 px-4 py-2 justify-center">
+            <div class="h-7 w-fu relativell bg-[#212121] rounded-xs flex text-white">
+                    <img 
+                        src="https://i.scdn.co/image/ab67616d00004851fa0ab3a28b5c52d8a5f97045" alt="sorry"
+                        class="w-8 h-7 rounded-xs sticky left-0">
+                    <div class="text-white flex w-full px-2 text-nowrap items-center"><span> Hot Hit</span>s Hindi</div>
+            </div>
+            <div class="h-7 w-full bg-[#212121] rounded-xs flex relative text-white">
+                    <img 
+                        src="https://i.scdn.co/image/ab67616d00004851fa0ab3a28b5c52d8a5f97045" alt="sorry"
+                        class="w-8 h-7 rounded-xs sticky left-0">
+                    <div class="text-white flex w-full px-2 text-nowrap items-center"><span> Liked s</span>ong</div>
+            </div>
+            <div class="h-7 w-full bg-[#212121] rounded-xs flex relative text-white">
+                    <img 
+                        src="https://i.scdn.co/image/ab67616d00004851fa0ab3a28b5c52d8a5f97045" alt="sorry"
+                        class="w-8 h-7 rounded-xs sticky left-0">
+                    <div class="text-white flex w-full px-2 text-nowrap items-center"><span> Taylor </span>Swift</div>
+            </div>
+            <div class="h-7 w-full bg-[#212121] rounded-xs flex relative text-white">
+                    <img 
+                        src="https://i.scdn.co/image/ab67616d00004851fa0ab3a28b5c52d8a5f97045" alt="sorry"
+                        class="w-8 h-7 rounded-xs sticky left-0">
+                    <div class="text-white flex w-full px-2 text-nowrap items-center"><span> 100kmph</span></div>
+            </div>
+            <div class="h-7 w-full bg-[#212121] rounded-xs flex relative text-white">
+                    <img 
+                        src="https://i.scdn.co/image/ab67616d00004851fa0ab3a28b5c52d8a5f97045" alt="sorry"
+                        class="w-8 h-7 rounded-xs sticky left-0">
+                    <div class="text-white flex w-full px-2 text-nowrap items-center"><span> phool</span>div>
+            </div>
+            
+          
+
+
+        
+        </div>
+    </section>
+
+    <main class=" w-full flex h-flex-1 gap-2 overflow-hidden ">
+        <aside id="sidebar" class="relative hidden lg:flex w-80 max-w-80 bg-black">
+            <div class="w-full rounded-tr-2xl  bg-[#121212]">
+                <div class=" w-full px-2 h-16 flex bg-[#121212] text-white  rounded-[inherit]">
+                    <div class="flex items-center justify-between gap-2 w-full px-2">
+                        <span class="text-xl font-bold">
+                            <h2>Your Library</h2>
+                        </span>
+                        <span class=" flex items-center">
+                            <button data-popover-target="library_suggestion" type="button"
+                                class="h-6 w-6 rounded-full hover:bg-gray-300 bg-[#282828] flex items-center justify-center ">
+                                <svg class="" data-encore-id="icon" role="img" aria-hidden="true"
+                                    class="e-10451-icon GorxihKONk8nwCGm" viewBox="0 0 16 16"
+                                    style="--encore-icon-height: var(--encore-graphic-size-decorative-smaller); --encore-icon-width: var(--encore-graphic-size-decorative-smaller);">
+                                    <path
+                                        d="M15.25 8a.75.75 0 0 1-.75.75H8.75v5.75a.75.75 0 0 1-1.5 0V8.75H1.5a.75.75 0 0 1 0-1.5h5.75V1.5a.75.75 0 0 1 1.5 0v5.75h5.75a.75.75 0 0 1 .75.75">
+                                    </path>
+                                </svg>
+                            </button>
+                        </span>
+
+                    </div>
+                </div>
+                <div class="h-[40%] overflow-auto spotify-scroll px-2 py-6 flex flex-col gap-4">
+                    <div class="px-4 py-3 bg-[#1F1F1F] text-white font-medium flex
+                            flex-col space-y-4 justify-start rounded-lg h-full">
+                        <p class="text-md">
+                            Create your first Playlist; <br /> <span class="text-sm">It's easy, we'll help
+                                you</span>
+                        </p>
+                        <button class="px-4 bg-white  h-9  flex justify-center items-center rounded-full ">
+                            <a href="#" class=" text-black text-center">Sign up free</a>
+                        </button>
+
+                    </div>
+                    <div
+                        class="h-fit px-4 py-3 bg-[#1F1F1F] text-white font-medium  flex flex-col space-y-4 justify-start  rounded-lg">
+                        <p class="text-md">
+                            Create your first Playlist; <br /> <span class="text-sm">It's easy, we'll help
+                                you</span>
+                        </p>
+                        <button class="px-4 bg-white  h-9  flex justify-center items-center rounded-full ">
+                            <a href="#" class=" text-black text-center">Sign up free</a>
+                        </button>
+
+                    </div>
+
+
+                </div>
+                `
+            </div>
+            <div class="absolute bottom-0 w-full h-62 rounded-b-xl bg-[#121212] ">
+                <div class="text-white  flex flex-wrap gap-3 px-10 py-3">
+                    <a href="#" class="text-[#B3B3B3] hover:text-white text-sm tracking">Legal</a>
+                    <a href="#" class="text-[#B3B3B3] hover:text-white text-sm">Safety&PrivacyCenter</a>
+                    <a href="#" class="text-[#B3B3B3] hover:text-white text-sm">Privacy Policy</a>
+                    <a href="#" class="text-[#B3B3B3] hover:text-white text-sm">Cookies</a>
+                    <a href="#" class="text-[#B3B3B3] hover:text-white text-sm">About Ads</a>
+                    <a href="#" class="text-[#B3B3B3] hover:text-white text-sm">Assessibility</a>
+
+                </div>
+                <div class="px-10 font-bold text-white text-sm"><a href="#" class=" hover:underline">Cookies</a>
+                </div>
+                <div class="h-[calc(100%-10rem)] px-8 py-6 flex items-center ">
+                    <button
+                        class="border border-amber-50 px-3 bg-black  h-9 hover:border-2 flex gap-2 items-center rounded-full ">
+                        <svg class="w-5 h-5 fill-[#8e8e8e]" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M352 256c0 22.2-1.2 43.6-3.3 64H163.3c-2.2-20.4-3.3-41.8-3.3-64s1.2-43.6 3.3-64H348.7c2.2 20.4 3.3 41.8 3.3 64zm28.8-64H503.9c5.3 20.5 8.1 41.9 8.1 64s-2.8 43.5-8.1 64H380.8c2.1-20.6 3.2-42 3.2-64s-1.1-43.4-3.2-64zm112.6-32H376.7c-10-63.9-29.8-117.4-55.3-151.6c78.3 20.7 142 77.5 171.9 151.6zm-149.1 0H167.7c6.1-36.4 15.5-68.6 27-94.7c10.5-23.6 22.2-40.7 33.5-51.5C239.4 3.2 248.7 0 256 0s16.6 3.2 27.8 13.8c11.3 10.8 23 27.9 33.5 51.5c11.6 26 20.9 58.2 27 94.7zm-209 0H18.6C48.6 85.9 112.2 29.1 190.6 8.4C165.1 42.6 145.3 96.1 135.3 160zM8.1 192H131.2c-2.1 20.6-3.2 42-3.2 64s1.1 43.4 3.2 64H8.1C2.8 299.5 0 278.1 0 256s2.8-43.5 8.1-64zM194.7 446.6c-11.6-26-20.9-58.2-27-94.6H344.3c-6.1 36.4-15.5 68.6-27 94.6c-10.5 23.6-22.2 40.7-33.5 51.5C272.6 508.8 263.3 512 256 512s-16.6-3.2-27.8-13.8c-11.3-10.8-23-27.9-33.5-51.5zM135.3 352c10 63.9 29.8 117.4 55.3 151.6C112.2 482.9 48.6 426.1 18.6 352H135.3zm358.1 0c-30 74.1-93.6 130.9-171.9 151.6c25.5-34.2 45.2-87.7 55.3-151.6H493.4z">
+                            </path>
+
+                        </svg>
+                        <a href="#" class=" text-white font-normal text-center">English</a>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+
+        <section
+            class="play bg-[#121210] w-full md:fit  h-full sm:h-[calc(100vh-144px)] max-h-full flex-1  rounded-tl-2xl overflow-y-scroll overflow-x-hidden hide-scrollbar ">
+            <div class="overflow-x-auto hide-scrollbar ">
+
+                <div
+                    class="h-12 w-full flex justify-between items-end px-5 text-sm sm:text-lg md:text-xl xl:text-2xl font-semibold sticky left-0">
+                    <div>
+                        <a href="#" class="hover:underline text-white "> Trending Now</a>
+                    </div>
+                    <div class=" text-[8px] sm:text-[10px] md:text-[12px] lg:text-sm">
+                        <a href="./trending.html" class="text-[#c5c5c5] hover:underline">show all</a>
+                    </div>
+                </div>
+
+
+                <div class="flex h-full w-fit px-3">
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div
+                        class="flex justify-center hover:bg-[#212121] rounded-sm w-20 sm:w-[120px]  md:w-[150px] xl:w-[200px] text-4px  lg:text-20px">
+
+                        <div
+                            class="w-[200px] flex items-center gap-1 lg:px-1 py-1 md:py-2 xl:py-3 rounded-lg h-full relative bg-transparent group flex-col">
+                            <div class="relative group w-full h-fit rounded-[inherit] flex justify-center">
+                                <img aria-hidden="false" draggable="false" loading="lazy"
+                                    src="https://i.scdn.co/image/ab67616d00001e029aa819fdf84c78fc1976391d"
+                                    data-testid="card-image" alt=""
+                                    class="w-[90%] h-full aspect-square object-cover group-hover:scale-102 tranition-all durartion-300 rounded-[inherit]">
+                                <div
+                                    class="h-5 w-5 sm:h-8 sm:w-8   lg:h-9 lg:w-9 xl:h-10 xl:w-10 rounded-full bg-green-600 absolute bottom-1 right-3 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                    <div class="h-2.5 w-2.5 sm:h-4 sm:w-3 lg:h-5 lg:w-4 shadow-sm shadow-white bg-black"
+                                        style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-center items-start px-2">
+                                <a href="#" class="font-semibold text-[8px] md:text-[12px] lg:text-[18px] line-clamp-2">
+                                    KALYANI (with Shreya Ghoshal) - Remix
+                                </a>
+
+                                <p class="text-[6px] md:text-[8px] lg:text-[10px] text-gray-400 line-clamp-1">
+                                    Artist Name
+                                    cdtrdtr dtrd
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+
+            <!-- card lane 2 -->
+
+
+            <div class="overflow-x-auto hide-scrollbar">
+                <div class="h-20 w-full flex justify-between items-end px-5  text-2xl font-semibold sticky left-0">
+                    <div>
+                        <a href="#" class="hover:underline">
+                            <h2 class="text-sm sm:text-lg md:text-xl xl:text-2xl">Popular Artist</h2>
+                        </a>
+                    </div>
+                    <div class="text-sm">
+                        <a href="./trending.html" class="text-[#c5c5c5] hover:underline">show all</a>
+                    </div>
+                </div>
+
+
+                <div id="artists"
+                    class="h-full items-start w-fit flex-col-2  sm:flex sm:flex-row  gap-0 mx-2 bg-[#121212] overflow-x-auto  ">
+                    <div
+                        class="w-fit flex flex-col items-center gap-1 p-3 rounded-lg h-fit hover: relative bg-[#121212] group ">
+                        <div class="relative group">
+                            <img aria-hidden="false" draggable="false" loading="lazy"
+                                src="https://i.scdn.co/image/ab67616100005174cb6926f44f620555ba444fca"
+                                data-image-status="loaded" data-testid="card-image" alt=""
+                                class="obD7rdENNc2n3fC0 whMS0fh9Ar4I_GaP _vYcJu3HJyUaRgOu qIwhHcbG780QDz68">
+                            <div
+                                class="h-10 w-10 rounded-full bg-green-600 absolute bottom-2 right-2 opacity-0 transition-all  duration-400 group-hover:opacity-100 flex items-center justify-center pl-1 ">
+                                <div class="h-5 w-4 shadow-sm shadow-white bg-black"
+                                    style="clip-path: polygon(98% 46%, 0 0, 0 100%);">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col justify-start items-start">
+                            <a href="#" class="font-semibold line-clamp-2">
+                                pritam
+                            </a>
+
+                            <p class="text-sm text-gray-400 line-clamp-1">
+                                Artist
+
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        class="w-fit flex flex-col items-center gap-1 p-3 rounded-lg h- hover:rent relative bg-[#121212] group">
+                        <div class="relative ">
+                            <img aria-hidden="false" draggable="false" loading="lazy"
+                                src="https://i.scdn.co/image/ab67616100005174b19af0ea736c6228d6eb539c"
+                                data-image-status="loaded" data-testid="card-image" alt=""
+                                class="obD7rdENNc2n3fC0 whMS0fh9Ar4I_GaP _vYcJu3HJyUaRgOu qIwhHcbG780QDz68">
+                            <div
+                                class="h-10 w-10 rounded-full bg-green-600 absolute bottom-1 right-1 opacity-0 transition-all duration-300 group-hover:opacity-100 flex items-center justify-center pl-1 shadow-inner shadow-green-900">
+                                <div class="h-5 w-4 shadow-sm shadow-white bg-black"
+                                    style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="#" class="font-semibold line-clamp-2">
+                                Pritam
+                            </a>
+
+                            <p class="text-sm text-gray-400 line-clamp-1">
+                                Artist
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        class="w-fit flex flex-col items-center gap-1 p-3 rounded-lg h- hover:rent relative bg-[#121212] ground">
+                        <div class="relative">
+                            <img aria-hidden="false" draggable="false" loading="lazy"
+                                src="https://i.scdn.co/image/ab67616100005174adfb0b2df04b77e43b5f7375"
+                                data-image-status="loaded" data-testid="card-image" alt=""
+                                class="obD7rdENNc2n3fC0 whMS0fh9Ar4I_GaP _vYcJu3HJyUaRgOu qIwhHcbG780QDz68">
+                            <div
+                                class="h-10 w-10 rounded-full bg-green-600 absolute bottom-1 right-1 opacity-0 transition-all duration-300 group-hover:opacity-100 flex items-center justify-center pl-1 shadow-inner shadow-green-900">
+                                <div class="h-5 w-4 shadow-sm shadow-white bg-black"
+                                    style="clip-path: polygon(98% 46%, 0 0, 0 100%);"></div>
+                            </div>
+
+                        </div>
+                        <div>
+                            <a href="#" class="font-semibold line-clamp-2">
+                                KALYANI (with Shreya Ghoshal) - Remix
+                            </a>
+
+                            <p class="text-sm text-gray-400 line-clamp-1">
+                                Artist Name
+                            </p>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+
+
+
+
+
+
+
+            <!-- card lane 3 -->
+
+
+
+
+
+        </section>
+    </main>
+
+
+    <footer class="w-full h-18 p-1 fixed bottom-0 hidden sm:block">
+        <div
+            class="flex justify-between -py-2 items-center h-full rounded-xl px-2 py-1 bg-linear-to-bl from-violet-500 to-fuchsia-500 text-white">
+
+            <div>
+                <p class="text-sm font-semibold ">Priew of Spotify</p>
+                <p class="text-lg ">signup to get unlimeted songs and podcast with ocassional ads no crdit card needed
+                </p>
+            </div>
+            <button class="px-4 py-2 w-fit  bg-white rounded-full text-center">
+                <a href="#" class=" text-black text-center text-nowrap text-lg font-bold tracking-tight">Sign up
+                    free</a>
+            </button>
+
+
+
+
+        </div>
+
+    </footer>
+</body>
+
+
+</html>

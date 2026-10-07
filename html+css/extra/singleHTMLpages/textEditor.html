@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    MathJax = {
+        tex: {
+            inlineMath: [['′,′', '′,′']],
+            displayMath: [['\\[', '\\]']]
+        }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+<style>
+    body {
+        background: #e5e5e5;
+        margin: 0;
+        padding: 40px;
+    }
+
+    .page {
+        background: white;
+        max-width: 8.5in;
+        margin: 0 auto;
+        padding: 1in;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, .15);
+        line-height: 1.6;
+        font-size: 12pt;
+        color: #111;
+    }
+
+    h1 { text-align: center; font-size: 17.28pt; font-weight: normal; margin-bottom: 2em; }
+    h2 { font-size: 14.4pt; font-weight: bold; margin-top: 1.5em; margin-bottom: .5em; }
+
+    .pair { text-align: center; font-size: 1.2em; margin: 1.2em 0; }
+
+    /* ===== Draggable text box ===== */
+    #textbox-wrapper {
+        position: absolute;      /* free positioning anywhere on page */
+        top: 40px;
+        left: 40px;
+        z-index: 50;
+        touch-action: none;
+    }
+
+    #drag-handle {
+        cursor: grab;
+        user-select: none;
+    }
+    #drag-handle:active { cursor: grabbing; }
+
+    #textbox:empty::before {
+        content: attr(data-placeholder);
+        color: #166534;
+        pointer-events: none;
+    }
+
+    #textbox { caret-color: #22c55e; }
+    #textbox * { display: inline; }
+</style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ===== Draggable text box ===== -->
+<div id="textbox-wrapper">
+    <div class="w-96">
+        <!-- Drag handle (title bar) -->
+        <div id="drag-handle"
+             class="bg-green-600 text-black font-mono text-xs font-bold px-3 py-1
+                    rounded-t-lg flex justify-between items-center">
+            <span>⠿ drag me</span>
+            <span>notes.txt</span>
+        </div>
+
+        <!-- Your custom text box -->
+        <div id="textbox"
+             class="bg-black border-2 border-green-500 rounded-b-lg p-4
+                    min-h-[200px] text-green-400 font-mono text-lg
+                    cursor-text whitespace-pre-wrap break-words
+                    focus:outline-none focus:ring-2 focus:ring-green-400"
+             contenteditable="true" spellcheck="false"
+             data-placeholder="Type here..."></div>
+
+        <div class="mt-2 text-green-500 font-mono text-sm bg-gray-900 rounded p-2">
+            <span id="lines">1</span> lines · <span id="chars">0</span> chars
+        </div>
+    </div>
+</div>
+
+<!-- ===== LaTeX page ===== -->
+<div class="page">
+    <h1>Fourier Transform</h1>
+
+    <h2>1&nbsp;&nbsp;Introduction</h2>
+    <p>The Fourier Transform is a mathematical technique used to
+        represent a function in terms of its frequency components.</p>
+
+    <h2>2&nbsp;&nbsp;Fourier Transform</h2>
+    <p>The continuous Fourier Transform of a function f(t)f(t)f(t) is defined as</p>
+    \[
+    F(\omega) = \int_{-\infty}^{\infty} f(t)\, e^{-i\omega t}\, dt
+    \]
+    where
+    <ul>
+        <li>f(t)f(t)f(t) is the time-domain signal,</li>
+        <li>F(ω)F(\omega)F(ω) is the frequency-domain representation,</li>
+        <li>ω\omegaω is the angular frequency,</li>
+        <li>i=−1i = \sqrt{-1}i=−1​.</li>
+    </ul>
+
+    <h2>3&nbsp;&nbsp;Inverse Fourier Transform</h2>
+    <p>The inverse Fourier Transform is given by</p>
+    \[
+    f(t) = \frac{1}{2\pi} \int_{-\infty}^{\infty} F(\omega)\, e^{i\omega t}\, d\omega
+    \]
+
+    <h2>4&nbsp;&nbsp;Fourier Transform Pair</h2>
+    <div class="pair">
+        f(t)  ↔  F    F(ω)f(t) \;\xleftrightarrow{\;\mathcal{F}\;}\; F(\omega)f(t)F​F(ω)
+    </div>
+
+    <h2>5&nbsp;&nbsp;Example</h2>
+    <p>Consider the function</p>
+    \[
+    f(t) = e^{-at^2}, \qquad a > 0.
+    \]
+    Its Fourier Transform is
+    \[
+    F(\omega) = \sqrt{\frac{\pi}{a}}\; e^{-\frac{\omega^2}{4a}}.
+    \]
+
+    <h2>6&nbsp;&nbsp;Conclusion</h2>
+    <p>The Fourier Transform converts a signal from the time domain
+        to the frequency domain, while the inverse Fourier Transform
+        converts it back.</p>
+</div>
+
+<script>
+    // ================= DRAG LOGIC =================
+    const wrapper = document.getElementById('textbox-wrapper');
+    const handle  = document.getElementById('drag-handle');
+
+    let isDragging = false;
+    let offsetX = 0, offsetY = 0;
+
+    handle.addEventListener('pointerdown', e => {
+        isDragging = true;
+        handle.setPointerCapture(e.pointerId);
+        const rect = wrapper.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+    });
+
+    handle.addEventListener('pointermove', e => {
+        if (!isDragging) return;
+        wrapper.style.left = (e.clientX - offsetX) + 'px';
+        wrapper.style.top  = (e.clientY - offsetY) + 'px';
+    });
+
+    handle.addEventListener('pointerup', () => isDragging = false);
+
+    // ================= TEXTBOX LOGIC =================
+    const box = document.getElementById('textbox');
+
+    box.addEventListener('beforeinput', e => {
+        if (e.inputType === 'insertParagraph') {
+            e.preventDefault();
+            document.execCommand('insertLineBreak');
+        }
+    });
+
+    box.addEventListener('paste', e => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
+
+    box.addEventListener('input', () => {
+        const text = box.innerText;
+        document.getElementById('lines').textContent = text.split('\n').length;
+        document.getElementById('chars').textContent = text.length;
+    });
+</script>
+
+</body>
+</html>

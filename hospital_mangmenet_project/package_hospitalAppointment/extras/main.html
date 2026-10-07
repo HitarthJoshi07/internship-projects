@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Admin Panel</title>
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f2ebfb',
+                            100: '#e7d9f5',
+                            200: '#d7b5ee',
+                            300: '#c594e5',
+                            400: '#b278dd',
+                            500: '#af96cc',
+                            600: '#672ea7',
+                            700: '#38195b',
+                            800: '#3b3740',
+                            900: '#10031f'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --brand-50: #f2ebfb;
+            --brand-100: #e7d9f5;
+            --brand-200: #d7b5ee;
+            --brand-300: #c594e5;
+            --brand-400: #b278dd;
+            --brand-500: #af96cc;
+            --brand-600: #672ea7;
+            --brand-700: #38195b;
+            --brand-800: #3b3740;
+            --brand-900: #10031f;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--brand-900);
+            color: var(--brand-50);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .bg-brand-900 { background: var(--brand-900) !important; }
+        .bg-brand-800 { background: var(--brand-800) !important; }
+        .bg-brand-700 { background: var(--brand-700) !important; }
+        .bg-brand-600 { background: var(--brand-600) !important; }
+        .bg-brand-50 { background: var(--brand-50) !important; }
+        .bg-brand-100 { background: var(--brand-100) !important; }
+        .bg-brand-200 { background: var(--brand-200) !important; }
+
+        .text-brand-50 { color: var(--brand-50) !important; }
+        .text-brand-100 { color: var(--brand-100) !important; }
+        .text-brand-200 { color: var(--brand-200) !important; }
+        .text-brand-700 { color: var(--brand-700) !important; }
+        .text-brand-600 { color: var(--brand-600) !important; }
+
+        .border-brand-700 { border-color: var(--brand-700) !important; }
+
+        .border { border: 1px solid rgba(255, 255, 255, 0.18) !important; }
+        .rounded-xl { border-radius: 0.75rem !important; }
+        .rounded-2xl { border-radius: 1rem !important; }
+        .rounded-3xl { border-radius: 1.75rem !important; }
+        .rounded-full { border-radius: 9999px !important; }
+        .shadow-lg { box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25) !important; }
+        .shadow-sm { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14) !important; }
+        .p-6 { padding: 1.5rem !important; }
+        .p-5 { padding: 1.25rem !important; }
+        .p-4 { padding: 1rem !important; }
+        .p-3 { padding: 0.75rem !important; }
+        .pt-2 { padding-top: 0.5rem !important; }
+        .mt-1 { margin-top: 0.25rem !important; }
+        .mt-2 { margin-top: 0.5rem !important; }
+        .mt-3 { margin-top: 0.75rem !important; }
+        .mt-4 { margin-top: 1rem !important; }
+        .mt-5 { margin-top: 1.25rem !important; }
+        .mt-8 { margin-top: 2rem !important; }
+        .mb-4 { margin-bottom: 1rem !important; }
+        .mb-5 { margin-bottom: 1.25rem !important; }
+        .mb-8 { margin-bottom: 2rem !important; }
+        .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+        .max-w-7xl { max-width: 80rem !important; }
+        .min-h-screen { min-height: 100vh !important; }
+
+        .flex { display: flex !important; }
+        .flex-col { flex-direction: column !important; }
+        .flex-wrap { flex-wrap: wrap !important; }
+        .items-end { align-items: flex-end !important; }
+        .items-center { align-items: center !important; }
+        .justify-between { justify-content: space-between !important; }
+        .justify-center { justify-content: center !important; }
+        .gap-2 { gap: 0.5rem !important; }
+        .gap-3 { gap: 0.75rem !important; }
+        .gap-4 { gap: 1rem !important; }
+        .gap-6 { gap: 1.5rem !important; }
+
+        .grid { display: grid !important; }
+        .grid-cols-[1.4fr_0.6fr] { grid-template-columns: 1.4fr 0.6fr !important; }
+        .sm\:grid-cols-[1.4fr_1.6fr_auto] { grid-template-columns: 1.4fr 1.6fr auto !important; }
+        .sm\:grid-cols-[1.4fr_1.2fr_1fr_auto] { grid-template-columns: 1.4fr 1.2fr 1fr auto !important; }
+        .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+
+        .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem !important; }
+        .space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.25rem !important; }
+
+        .text-sm { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+        .text-xl { font-size: 1.25rem !important; line-height: 1.75rem !important; }
+        .text-3xl { font-size: 1.875rem !important; line-height: 2.25rem !important; }
+        .font-semibold { font-weight: 600 !important; }
+        .font-bold { font-weight: 700 !important; }
+        .uppercase { text-transform: uppercase !important; }
+        .tracking-[0.2em] { letter-spacing: 0.2em !important; }
+
+        .bg-slate-50 { background: #f8fafc !important; }
+        .bg-slate-100 { background: #f1f5f9 !important; }
+        .bg-slate-200 { background: #e2e8f0 !important; }
+        .bg-slate-300 { background: #cbd5e1 !important; }
+        .bg-slate-900 { background: #0f172a !important; }
+        .text-slate-900 { color: #0f172a !important; }
+        .text-slate-700 { color: #374151 !important; }
+        .text-slate-600 { color: #4b5563 !important; }
+        .text-rose-600 { color: #be123c !important; }
+        .text-rose-400 { color: #fb7185 !important; }
+        .bg-white { background: #ffffff !important; }
+
+        .rounded-full { border-radius: 9999px !important; }
+        .border-t { border-top-width: 1px !important; }
+        .border-b { border-bottom-width: 1px !important; }
+        .border-slate-200 { border-color: #e2e8f0 !important; }
+
+        .min-h-\[1\.5rem\] { min-height: 1.5rem !important; }
+        .text-left { text-align: left !important; }
+        .text-white { color: white !important; }
+        .outline-none { outline: none !important; }
+
+        input[type="text"], input[type="tel"] {
+            background: var(--brand-900);
+            color: var(--brand-50);
+            border: 1px solid var(--brand-700);
+        }
+
+        button { cursor: pointer; }
+        .inline-flex { display: inline-flex !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-brand-900 text-brand-50">
+    <div class="max-w-7xl mx-auto p-6">
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-brand-50">Hospital Admin Panel</h1>
+                <p class="mt-2 text-brand-200">Add, edit, and delete hospital information from the list below.</p>
+            </div>
+            <button id="new-hospital-btn" class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700">Add New Hospital</button>
+        </div>
+
+        <div class="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+            <section class="space-y-6">
+                <div class="overflow-hidden rounded-3xl bg-brand-800 border border-brand-700 shadow-lg">
+                    <div class="border-b border-brand-700 bg-brand-700 px-6 py-4">
+                        <h2 class="text-xl font-semibold text-brand-50">Hospitals</h2>
+                        <p class="mt-1 text-sm text-brand-200">Manage hospital records, including emergency service availability.</p>
+                    </div>
+                    <div id="hospital-list" class="p-6"></div>
+                </div>
+            </section>
+
+            <aside class="space-y-6">
+                <div class="rounded-3xl bg-brand-800 p-6 shadow-lg border border-brand-700">
+                    <div class="mb-5">
+                        <h2 id="form-title" class="text-xl font-semibold text-brand-50">Add Hospital</h2>
+                        <p id="form-description" class="mt-1 text-sm text-brand-200">Provide hospital details and save to update the list.</p>
+                    </div>
+
+                    <form id="hospital-form" class="space-y-6">
+                        <div class="grid gap-4">
+                            <div>
+                                <label for="hospital-id" class="block text-sm font-medium text-brand-100">Hospital ID</label>
+                                <input id="hospital-id" type="text" placeholder="Leave blank to auto-generate" class="mt-1 w-full rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm text-brand-50 outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+                            </div>
+
+                            <div>
+                                <label for="hospital-name" class="block text-sm font-medium text-brand-100">Hospital Name</label>
+                                <input id="hospital-name" type="text" placeholder="e.g. City General Hospital" required class="mt-1 w-full rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm text-brand-50 outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+                            </div>
+
+                            <div>
+                                <label for="hospital-location" class="block text-sm font-medium text-brand-100">Main Location</label>
+                                <input id="hospital-location" type="text" placeholder="e.g. New York, NY" required class="mt-1 w-full rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm text-brand-50 outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <input id="hospital-emergency" type="checkbox" class="h-5 w-5 rounded border-brand-700 text-brand-600 focus:ring-brand-500" />
+                                <label for="hospital-emergency" class="text-sm font-medium text-brand-100">Emergency services available</label>
+                            </div>
+                        </div>
+
+                        <div class="rounded-3xl border border-brand-700 bg-brand-900 p-4 shadow-sm">
+                            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-brand-50">Hospital Branches</h3>
+                                    <p class="text-sm text-brand-200">Add all branches and satellite locations for this hospital.</p>
+                                </div>
+                                <button type="button" id="add-branch-btn" data-action="add-branch" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700">Add Branch</button>
+                            </div>
+                            <div id="branches-list" class="space-y-4"></div>
+                        </div>
+
+                        <div class="rounded-3xl border border-brand-700 bg-brand-900 p-4 shadow-sm">
+                            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-brand-50">Departments & Doctors</h3>
+                                    <p class="text-sm text-brand-200">Create departments and assign doctors to each department.</p>
+                                </div>
+                                <button type="button" id="add-department-btn" data-action="add-department" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700">Add Department</button>
+                            </div>
+                            <div id="departments-list" class="space-y-5"></div>
+                        </div>
+
+                        <div id="form-feedback" class="min-h-[1.5rem] text-sm text-rose-400"></div>
+
+                        <div class="flex flex-wrap gap-3 pt-2">
+                            <button type="submit" id="save-hospital-btn" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700">Save Hospital</button>
+                            <button type="button" id="cancel-edit-btn" class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 hidden">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="live-summary" class="rounded-3xl bg-brand-800 p-6 shadow-lg border border-brand-700">
+                    <h2 class="text-xl font-semibold text-brand-50">Live Hospital Summary</h2>
+                    <p class="mt-2 text-sm text-brand-200">See an instant preview of the hospital details you are currently editing.</p>
+                    <div id="live-summary-content" class="mt-4 space-y-4 text-sm text-brand-100"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- <script src="./chatbot-widget.js"></script> -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>

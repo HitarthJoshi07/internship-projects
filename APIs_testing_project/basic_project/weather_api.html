@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeatherNow</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        display: ['"Space Grotesk"', 'sans-serif'],
+        body: ['"DM Sans"', 'sans-serif'],
+      },
+      colors: {
+        base: { 50: '#f0f4f8', 100: '#d9e2ec', 200: '#bcccdc', 300: '#8ba3bc', 400: '#5a7590', 500: '#3a5068', 600: '#253546', 700: '#1a2a3a', 800: '#111e2c', 900: '#0b1520' },
+        amber: { 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706' },
+      }
+    }
+  }
+}
+</script>
+
+<!-- ============================================================
+     PASTE YOUR OPENWEATHERMAP API KEY BELOW — BETWEEN THE QUOTES
+     ============================================================ -->
+<script>
+  const API_KEY = "634b25ff1aa43b3076c3f10b9611b116";
+</script>
+<!-- ============================================================ -->
+
+<style>
+  body { font-family: 'DM Sans', sans-serif; }
+
+  /* Animated background */
+  .bg-blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .blob { position: absolute; border-radius: 50%; filter: blur(110px); opacity: 0.25; }
+  .blob-a { width: 520px; height: 520px; background: #f59e0b; top: -12%; left: -8%; animation: drift 22s ease-in-out infinite alternate; }
+  .blob-b { width: 420px; height: 420px; background: #0ea5e9; bottom: -8%; right: -5%; animation: drift 22s ease-in-out infinite alternate-reverse; }
+  .blob-c { width: 300px; height: 300px; background: #8b5cf6; top: 45%; left: 55%; animation: drift 18s ease-in-out 3s infinite alternate; }
+  @keyframes drift {
+    0% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(50px,-40px) scale(1.08); }
+    100% { transform: translate(-30px,30px) scale(0.95); }
+  }
+
+  /* Glass card */
+  .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+  .glass-hover:hover { background: rgba(255,255,255,0.09); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
+
+  /* Icon pulse */
+  .icon-breathe { animation: breathe 3.5s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+  /* Spinner */
+  .spin { animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Fade up */
+  .fade-up { animation: fadeUp 0.45s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Toast slide */
+  .toast-in { animation: toastIn 0.35s ease, toastOut 0.35s ease 3.2s forwards; }
+  @keyframes toastIn { from { transform:translateX(110%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  @keyframes toastOut { to { transform:translateX(40px); opacity:0; } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+  /* Search focus ring */
+  .search-ring:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.2); }
+</style>
+</head>
+
+<body class="bg-base-900 text-base-50 min-h-screen overflow-x-hidden">
+
+<!-- Background blobs -->
+<div class="bg-blobs">
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+  <div class="blob blob-c"></div>
+</div>
+
+<!-- Toast container -->
+<div id="toasts" class="fixed top-5 right-5 z-50 flex flex-col gap-2.5"></div>
+
+<!-- Main app -->
+<div class="relative z-10 max-w-3xl mx-auto px-5 pt-8 pb-16">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between mb-8">
+    <div class="flex items-center gap-2.5">
+      <i class="fa-solid fa-cloud-sun text-amber-500 text-lg"></i>
+      <span class="font-display text-xl font-bold tracking-tight">WeatherNow</span>
+    </div>
+    <div class="flex items-center gap-2.5">
+      <!-- Unit toggle -->
+      <div class="flex rounded-lg overflow-hidden border border-white/10 bg-black/30">
+        <button id="btnC" onclick="setUnit('metric')" class="px-3.5 py-1.5 text-sm font-display font-semibold transition-all">C</button>
+        <button id="btnF" onclick="setUnit('imperial')" class="px-3.5 py-1.5 text-sm font-display font-semibold transition-all">F</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Search -->
+  <div class="relative mb-5 fade-up">
+    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-base-400 text-sm pointer-events-none"></i>
+    <input id="searchInput" type="text" placeholder="Search any city..."
+      class="search-ring w-full glass rounded-2xl py-4 pl-11 pr-14 text-base outline-none text-base-50 placeholder:text-base-400 transition-all">
+    <button onclick="doSearch()" class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-amber-500 hover:bg-amber-400 text-black rounded-xl flex items-center justify-center transition-all active:scale-95">
+      <i class="fa-solid fa-arrow-right text-sm"></i>
+    </button>
+  </div>
+
+  <!-- Quick cities -->
+  <div class="flex flex-wrap gap-2 mb-8 fade-up" style="animation-delay:0.08s">
+    <button onclick="quickSearch(this,'London')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">London</button>
+    <button onclick="quickSearch(this,'New York')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">New York</button>
+    <button onclick="quickSearch(this,'Tokyo')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">Tokyo</button>
+    <button onclick="quickSearch(this,'Paris')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">Paris</button>
+    <button onclick="quickSearch(this,'Dubai')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">Dubai</button>
+    <button onclick="quickSearch(this,'Sydney')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">Sydney</button>
+    <button onclick="quickSearch(this,'Mumbai')" class="chip glass rounded-full px-4 py-1.5 text-xs font-medium text-base-300 hover:text-base-50 hover:bg-white/10 transition-all">Mumbai</button>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+    <!-- Empty state shown by default -->
+    <div id="emptyState" class="text-center py-20 fade-up">
+      <div class="text-6xl text-base-500/50 mb-5"><i class="fa-solid fa-cloud-sun-rain"></i></div>
+      <h2 class="font-display text-xl font-semibold mb-2">Search a city to get started</h2>
+      <p class="text-base-300 text-sm max-w-sm mx-auto leading-relaxed">Type a city name above or tap a quick-access city to see live weather data from OpenWeatherMap.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ──
+  let unit = localStorage.getItem('wu') || 'metric';
+  let lastCity = '';
+
+  // ── Init ──
+  (function(){
+    refreshUnitBtns();
+    document.getElementById('searchInput').addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+    // Check for missing key
+    if(API_KEY === "PASTE_YOUR_API_KEY_HERE" || !API_KEY){
+      document.getElementById('content').innerHTML = `
+        <div class="glass rounded-2xl p-6 text-center fade-up">
+          <div class="text-4xl text-amber-500 mb-4"><i class="fa-solid fa-key"></i></div>
+          <h2 class="font-display text-lg font-semibold mb-2">API Key Required</h2>
+          <p class="text-base-300 text-sm leading-relaxed max-w-md mx-auto mb-3">
+            Open the HTML file and find <code class="bg-white/10 px-1.5 py-0.5 rounded text-amber-400 text-xs">PASTE_YOUR_API_KEY_HERE</code> near the top.
+            Replace it with your free OpenWeatherMap API key.
+          </p>
+          <p class="text-base-400 text-xs">Get one free at <a href="https://openweathermap.org/api" target="_blank" class="text-amber-400 hover:underline">openweathermap.org/api</a></p>
+        </div>`;
+    }
+  })();
+
+  // ── Unit toggle ──
+  function setUnit(u){
+    unit = u;
+    localStorage.setItem('wu', u);
+    refreshUnitBtns();
+    if(lastCity) fetchWeather(lastCity);
+  }
+  function refreshUnitBtns(){
+    const btnC = document.getElementById('btnC');
+    const btnF = document.getElementById('btnF');
+    btnC.className = 'px-3.5 py-1.5 text-sm font-display font-semibold transition-all ' + (unit==='metric' ? 'bg-amber-500 text-black' : 'text-base-400 hover:text-base-200');
+    btnF.className = 'px-3.5 py-1.5 text-sm font-display font-semibold transition-all ' + (unit==='imperial' ? 'bg-amber-500 text-black' : 'text-base-400 hover:text-base-200');
+  }
+
+  // ── Search ──
+  function doSearch(){
+    const q = document.getElementById('searchInput').value.trim();
+    if(!q) return toast('Enter a city name','error');
+    if(API_KEY === "PASTE_YOUR_API_KEY_HERE" || !API_KEY) return toast('Set your API key first — see instructions above','error');
+    clearChips();
+    fetchWeather(q);
+    document.getElementById('searchInput').value = '';
+  }
+  function quickSearch(el, city){
+    if(API_KEY === "PASTE_YOUR_API_KEY_HERE" || !API_KEY) return toast('Set your API key first','error');
+    clearChips();
+    el.classList.add('!bg-amber-500','!text-black','!border-amber-500');
+    fetchWeather(city);
+  }
+  function clearChips(){ document.querySelectorAll('.chip').forEach(c=>c.classList.remove('!bg-amber-500','!text-black','!border-amber-500')); }
+
+  // ── Fetch ──
+  function fetchWeather(city){
+    lastCity = city;
+    const el = document.getElementById('content');
+    el.innerHTML = `<div class="flex items-center justify-center gap-3 py-20 text-base-300"><div class="w-6 h-6 border-2 border-white/10 border-t-amber-500 rounded-full spin"></div>Loading...</div>`;
+
+    const u = unit;
+    Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&units=${u}&appid=${API_KEY}`).then(r=>{if(!r.ok)throw new Error(r.status);return r.json();}),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&units=${u}&appid=${API_KEY}`).then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+    ])
+    .then(([cur, fc])=> render(cur, fc))
+    .catch(err=>{
+      const msgs = {'404':{t:'City not found',d:`"${city}" could not be found. Check the spelling.`},'401':{t:'Invalid API Key',d:'Your key is invalid or expired. Open the HTML and replace the placeholder.'}};
+      const m = msgs[err.message] || {t:'Something went wrong',d:'Could not fetch weather. Check your connection.'};
+      el.innerHTML = `<div class="text-center py-20 fade-up"><div class="text-5xl text-base-500/50 mb-4"><i class="fa-solid fa-triangle-exclamation"></i></div><h2 class="font-display text-lg font-semibold mb-2">${m.t}</h2><p class="text-base-300 text-sm max-w-sm mx-auto">${m.d}</p></div>`;
+      toast(m.t,'error');
+    });
+  }
+
+  // ── Helpers ──
+  function icon(code,day){
+    const m={'01':day?'fa-sun':'fa-moon','02':day?'fa-cloud-sun':'fa-cloud-moon','03':'fa-cloud','04':'fa-cloud','09':'fa-cloud-showers-heavy','10':day?'fa-cloud-sun-rain':'fa-cloud-moon-rain','11':'fa-cloud-bolt','13':'fa-snowflake','50':'fa-smog'};
+    return m[String(code).slice(0,2)]||'fa-cloud';
+  }
+  function iconColor(code){
+    const m={'01':'#fbbf24','02':'#fbbf24','03':'#94a3b8','04':'#64748b','09':'#60a5fa','10':'#38bdf8','11':'#a78bfa','13':'#e2e8f0','50':'#94a3b8'};
+    return m[String(code).slice(0,2)]||'#fbbf24';
+  }
+  function windDir(d){return['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16];}
+
+  // ── Render ──
+  function render(c, f){
+    const el = document.getElementById('content');
+    const uLabel = unit==='metric'?'C':'F';
+    const day = c.dt > c.sys.sunrise && c.dt < c.sys.sunset;
+    const ic = icon(c.weather[0].id, day);
+    const icCol = iconColor(c.weather[0].id);
+    const tmp = Math.round(c.main.temp);
+    const fl = Math.round(c.main.feels_like);
+    const windUnit = unit==='metric'?'km/h':'mph';
+    const windMul = unit==='metric'?3.6:1;
+
+    // 5-day: pick closest to noon per day
+    const days={};
+    f.list.forEach(i=>{
+      const dt=i.dt_txt.split(' ')[0];
+      const h=parseInt(i.dt_txt.split(' ')[1]);
+      if(!days[dt]||Math.abs(h-12)<Math.abs(parseInt(days[dt].dt_txt.split(' ')[1])-12)) days[dt]=i;
+    });
+    const fc5=Object.values(days).slice(0,5);
+
+    const fcHTML = fc5.map(d=>{
+      const dn=new Date(d.dt*1000).toLocaleDateString('en',{weekday:'short'});
+      const fi=icon(d.weather[0].id,true);
+      const fco=iconColor(d.weather[0].id);
+      return `
+        <div class="glass glass-hover rounded-2xl py-5 px-3 text-center transition-all cursor-default">
+          <div class="text-xs font-medium text-base-300 mb-3">${dn}</div>
+          <i class="fa-solid ${fi} text-3xl mb-3 block" style="color:${fco}"></i>
+          <div class="font-display font-bold text-base">${Math.round(d.main.temp_max)}°<span class="text-base-400 font-normal text-sm ml-0.5">${Math.round(d.main.temp_min)}°</span></div>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+      <!-- Current weather -->
+      <div class="glass rounded-3xl p-6 sm:p-8 mb-4 fade-up">
+        <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+          <div class="text-center sm:text-left flex-1">
+            <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight mb-1">${c.name}</h1>
+            <p class="text-base-300 text-sm mb-1">${c.sys.country} &middot; ${new Date().toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'})}</p>
+            <p class="text-base-200 text-sm capitalize mb-5">${c.weather[0].description}</p>
+            <div class="font-display text-6xl sm:text-7xl font-bold tracking-tighter leading-none">${tmp}<span class="text-2xl text-base-400 font-normal">${uLabel}</span></div>
+            <p class="text-base-400 text-sm mt-2">Feels like ${fl}°${uLabel}</p>
+          </div>
+          <div class="flex-shrink-0">
+            <i class="fa-solid ${ic} text-7xl sm:text-8xl icon-breathe" style="color:${icCol};filter:drop-shadow(0 4px 24px ${icCol}44)"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 fade-up" style="animation-delay:0.08s">
+        ${detailCard('fa-droplet','Humidity',c.main.humidity+'%')}
+        ${detailCard('fa-wind','Wind',Math.round(c.wind.speed*windMul)+' <span class="text-xs text-base-400">'+windUnit+' '+windDir(c.wind.deg)+'</span>')}
+        ${detailCard('fa-gauge-high','Pressure',c.main.pressure+' <span class="text-xs text-base-400">hPa</span>')}
+        ${detailCard('fa-eye','Visibility',(c.visibility/1000).toFixed(1)+' <span class="text-xs text-base-400">km</span>')}
+        ${detailCard('fa-sun','Sunrise',new Date(c.sys.sunrise*1000).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}))}
+        ${detailCard('fa-moon','Sunset',new Date(c.sys.sunset*1000).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'}))}
+        ${detailCard('fa-temperature-half','Range',Math.round(c.main.temp_min)+'° / '+Math.round(c.main.temp_max)+'°')}
+        ${detailCard('fa-cloud','Clouds',c.clouds.all+'%')}
+      </div>
+
+      <!-- 5-day forecast -->
+      <div class="fade-up" style="animation-delay:0.16s">
+        <h2 class="font-display text-base font-semibold mb-3 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-amber-500 text-sm"></i>5-Day Forecast</h2>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">${fcHTML}</div>
+      </div>
+    `;
+  }
+
+  function detailCard(icon, label, value){
+    return `
+      <div class="glass glass-hover rounded-2xl py-4 px-3 text-center transition-all cursor-default">
+        <i class="fa-solid ${icon} text-amber-500 text-lg mb-2 block"></i>
+        <div class="text-[0.65rem] text-base-400 uppercase tracking-wider mb-1.5">${label}</div>
+        <div class="font-display font-bold text-base">${value}</div>
+      </div>`;
+  }
+
+  // ── Toast ──
+  function toast(msg, type='info'){
+    const c=document.getElementById('toasts');
+    const t=document.createElement('div');
+    const colors={error:'border-l-red-400',success:'border-l-emerald-400',info:'border-l-amber-400'};
+    const icons={error:'fa-circle-exclamation text-red-400',success:'fa-circle-check text-emerald-400',info:'fa-circle-info text-amber-400'};
+    t.className=`toast-in glass ${colors[type]||colors.info} border-l-[3px] rounded-xl px-4 py-3 text-sm text-base-50 flex items-center gap-2.5 max-w-xs shadow-xl`;
+    t.innerHTML=`<i class="fa-solid ${icons[type]||icons.info}"></i><span>${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(()=>t.remove(),3700);
+  }
+</script>
+</body>
+</html>

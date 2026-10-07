@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen w-screen bg-gray-100">
+    <nav class=" bg-gray-600 h-30">
+        <div class="max-w-7xl mx-auto p-6">
+            <div class="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div class="text-white/80">
+                    <h1 class="text-3xl font-bold ">Hospital Admin Panel</h1>
+                    <p class="mt-2 text-brand-200">Add, edit, and delete hospital information from the list below.</p>
+                </div>
+                <button id="new-hospital-btn"
+                    class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-700 ">Add
+                    New Hospital</button>
+            </div>
+    </nav>
+
+    <div class="grid lg:grid-cols-[1.5fr_0.6fr] w-full bg-white gap-6">
+        <section class="space-y-6">
+            <div class="oveflow-hidden rounded-3xl bg-gray-800 border border-white/50 shadow-lg">
+                <div class="border-2 border-white px-6 py-6">
+                    <h2 class="text-xl font-bold text-white">Hospital Information</h2>
+                    <p class="mt-1 text-sm text-gray-50">Manage hospital records, including emergency service
+                        availability.</p>
+                </div>
+                <div id="hospital-list" class="p-6"></div>
+                <form id="hospital-form" class="space-y-6 text-white" type="submit">
+                    <div class="grid gap-4">
+                        <div>
+                            <div class=" flex justify-between px-2">
+                                <label for="hospital-id" class="block text-sm font-medium text-brand-100">Hospital
+                                    ID</label>
+                                <button id="id-gen-btn"
+                                    class="flex items-center bg-gray-900 hover:bg-gray-50 hover:text-black hover:shadow-2xl hover:shadow-green-300 text-white rounded-2xl p-2">
+                                    genID
+                                    <img class="w-4 h-4"
+                                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Refresh_icon.svg/1280px-Refresh_icon.svg.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail&_=20160122181438"
+                                        alt="sry">
+                                </button>
+                            </div>
+                            <input id="hospital-id" type="text" placeholder="Click genrate button to auto genrate"
+                                disabled
+                                class=" text-white mt-1 w-full rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm text-brand-50 outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+
+                        </div>
+
+                        <div>
+                            <label for="hospital-name" class="block text-sm font-medium text-brand-100">Hospital
+                                Name</label>
+                            <input id="hospital-name" type="text" placeholder="e.g. City General Hospital" required
+                                class=" text-black mt-1 w-full rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm text-brand-50 outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+                        </div>
+
+                        <div>
+                            <label for="hospital-location" class="block text-sm font-medium text-brand-100">Main
+                                Location</label>
+                            <input id="hospital-location" type="text" placeholder="e.g. New York, NY" required
+                                class=" text-black mt-1 w-full rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm text-brand-50 outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <input id="hospital-emergency" type="checkbox"
+                                class=" text-black h-5 w-5 rounded border-brand-700 text-brand-600 focus:ring-brand-500" />
+                            <label for="hospital-emergency" class="text-sm font-medium text-brand-100">Emergency
+                                services available</label>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl border p-4 shadow-sm space-y-3">
+                        <div class="rounded-3xl border p-4 shadow-sm">
+
+                            <!-- Header -->
+                            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-brand-50">
+                                        Hospital Branches
+                                    </h3>
+
+                                    <p class="text-sm text-brand-200">
+                                        Add all branches and satellite locations for this hospital.
+                                    </p>
+                                </div>
+
+                                <button type="button" id="add-branch-btn"
+                                    class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700">
+                                    Add Branch
+                                </button>
+                            </div>
+
+                            <!-- Branch Input -->
+                            <div id="branch-template" class="hidden mb-5">
+
+                                <div class="flex items-center gap-3">
+
+                                    <input id="branch-input" type="text" placeholder="Branch location"
+                                        class="branch-location flex-1 text-black mt-1 rounded-2xl border border-brand-700 bg-brand-900 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-brand-200 focus:ring-2" />
+
+                                    <button type="button" data-action="add-branch"
+                                        class="inline-flex items-center justify-center rounded-xl bg-gray-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700">
+                                        Add
+                                    </button>
+
+                                    <button type="button" data-action="remove-branch"
+                                        class="inline-flex items-center justify-center rounded-xl bg-gray-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700">
+                                        Remove
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <!-- Added Branches -->
+                            <div id="branches-list" class="flex flex-col gap-3">
+                            </div>
+
+                        </div>
+
+                        <div class="rounded-3xl border border-brand-700 bg-brand-900 p-4 shadow-sm">
+                            <div>
+                                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-brand-50">Departments & Doctors</h3>
+                                        <p class="text-sm text-brand-200">Create departments and assign doctors to each
+                                            department.</p>
+                                    </div>
+                                    <button type="button" id="add-department-btn" data-action="add-department"
+                                        class="inline-flex items-center justify-center rounded-2xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700">Add
+                                        Department</button>
+                                </div>
+                            </div>
+
+                            <div id="departments-list" class="space-y-5">
+
+                                <div id="add-dept" class="rounded-xl border border-gray-600 p-4 text-white hidden">
+                                    <span class="text-md text-gray-400">Add a department </span>
+                                    <input type="text" id="select-dept" name="department" list="department-list"
+                                        placeholder="Search department..." autocomplete="off"
+                                        class="w-full rounded-2xl border border-brand-700 bg-gray-900 px-4 py-3 text-sm text-brand-50 placeholder:text-gray-400 outline-none transition focus:border-brand-500 focus:ring-black-200 focus:ring-2">
+
+                                    <button id="save-department-btn" type="button"
+                                        class="mt-3 rounded-xl bg-blue-600 px-4 py-2">
+                                        Add Department
+                                    </button>
+
+                                    <datalist id="department-list">
+                                        <option value="General Medicine">
+                                        <option value="Cardiology">
+                                        <option value="Neurology">
+                                        <option value="Neurosurgery">
+                                        <option value="Orthopedics">
+                                        <option value="General Surgery">
+                                        <option value="Pediatrics">
+                                        <option value="Gynecology">
+                                        <option value="Obstetrics">
+                                        <option value="Dermatology">
+                                        <option value="ENT (Ear, Nose & Throat)">
+                                        <option value="Ophthalmology">
+                                        <option value="Urology">
+                                        <option value="Nephrology">
+                                        <option value="Pulmonology">
+                                        <option value="Gastroenterology">
+                                        <option value="Endocrinology">
+                                        <option value="Psychiatry">
+                                        <option value="Psychology">
+                                        <option value="Radiology">
+                                        <option value="Pathology">
+                                        <option value="Emergency Medicine">
+                                        <option value="Anesthesiology">
+                                        <option value="ICU (Intensive Care Unit)">
+                                        <option value="Physiotherapy">
+                                        <option value="Oncology">
+                                        <option value="Dental">
+                                        <option value="Plastic Surgery">
+                                        <option value="Rheumatology">
+                                        <option value="Infectious Diseases">
+                                    </datalist>
+
+                                </div>
+
+                                <div id="add-doctor" class="rounded-xl border border-gray-600 p-4 text-white hidden">
+                                    <span class="text-md text-gray-400">Add a doctor</span>
+
+                                    <input type="text" id="select-doctor" name="doctor"
+                                        placeholder="Enter doctor name..." autocomplete="off"
+                                        class="w-full rounded-2xl border border-gray-600 bg-gray-900 px-4 py-3 text-sm text-white placeholder:text-gray-400 outline-none transition focus:border-blue-500 focus:ring-blue-500 focus:ring-2">
+
+                                    <h4 class="mt-4 text-gray-300">
+                                        Weekly Availability
+                                    </h4>
+
+
+                                    <div id="doctor-schedule" class="mt-3 space-y-2">
+ 
+                                        
+                                    </div>
+
+
+                                    <button id="save-doctor-btn" type="button"
+                                        class="mt-3 rounded-xl bg-blue-600 px-4 py-2">
+                                        Add Doctor
+                                    </button>
+
+                                </div>
+
+                                <div id="departments-container">
+
+                                </div>
+
+
+
+                            </div>
+                        </div>
+
+                        <div id="form-feedback" class="min-h-[1.5rem] text-sm text-rose-400"></div>
+
+                        <div class="flex justify-end flex-wrap gap-3 p-4">
+                            <button id="save-hospital-btn"
+                                class="inline-flex items-center justify-center rounded-2xl bg-gray-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-700">Add
+                                hospital</button>
+                            <button type="button" id="cancel-hospital-btn"
+                                class="text-white transition hover:bg-gray-700 rounded-xl p-3">Cancel</button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </section>
+        <aside class="space-y-6 ">
+            <div class="rounded-3xl p-6 shadow-lg border ">
+                <div class="mb-5">
+                    <h2 id="form-title" class="text-xl font-semibold text-brand-50">Add Hospital</h2>
+                    <p id="form-description" class="mt-1 text-sm text-brand-200">Provide hospital details and save to
+                        update the list.</p>
+
+                    <button id="clear-storage-btn" class="bg-red-500 text-white rounded-2xl p-2 font-bold">
+                        Clear Storage
+                    </button>
+                </div>
+                <div id="form-preview"
+                    class="rounded-3xl w-full px-3 border border-gray-300 h-fit p-2 flex flex-col gap-2">
+                </div>
+
+
+        </aside>
+    </div>
+
+
+    <script src="admin.js" type="module"></script>
+    <script src="./data.js" type="module"></script>
+
+</body>
+
+</html>

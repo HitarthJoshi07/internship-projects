@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Maya Ortiz — A Working Diary</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Kalam:wght@300;400;700&family=Special+Elite&family=Architects+Daughter&display=swap" rel="stylesheet">
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<style>
+  :root{
+    --paper: #f2e8d3;
+    --paper-dark: #e7d9b8;
+    --ink: #2b2a28;
+    --ink-soft: #5c5648;
+    --kraft: #a9835a;
+    --kraft-dark: #7a5c3a;
+    --red-string: #ad3b2e;
+    --sticky-yellow: #f4e08a;
+    --sticky-pink: #f0c3c6;
+    --sticky-mint: #bcd8c3;
+    --sticky-blue: #bcd3e0;
+  }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Kalam', cursive;
+    overflow-x:hidden;
+  }
+
+  .font-hand{ font-family:'Caveat', cursive; }
+  .font-type{ font-family:'Special Elite', monospace; }
+  .font-note{ font-family:'Architects Daughter', cursive; }
+
+  /* paper texture */
+  .paper-texture{
+    background-image:
+      radial-gradient(rgba(0,0,0,0.035) 1px, transparent 1px),
+      radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 2px 3px;
+  }
+
+  .paper-fibers{
+    position:absolute; inset:0; pointer-events:none; opacity:0.5; mix-blend-mode:multiply;
+    background-image: repeating-linear-gradient(90deg, rgba(122,92,58,0.03) 0px, transparent 2px, transparent 40px, rgba(122,92,58,0.03) 42px);
+  }
+
+  .torn-edge-bottom{
+    position:relative;
+  }
+  .torn-edge-bottom::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-1px; height:26px;
+    background:
+      linear-gradient(135deg, transparent 12px, var(--paper) 0) 0 0,
+      linear-gradient(-135deg, transparent 12px, var(--paper) 0) 0 0;
+    background-size: 26px 26px;
+    background-repeat: repeat-x;
+    background-position: bottom;
+  }
+
+  .washi{
+    background: repeating-linear-gradient(45deg, rgba(173,59,46,0.55), rgba(173,59,46,0.55) 6px, rgba(240,195,198,0.55) 6px, rgba(240,195,198,0.55) 12px);
+    opacity:0.85;
+  }
+
+  .pin::before{
+    content:"";
+    position:absolute; top:-10px; left:50%; transform:translateX(-50%);
+    width:16px; height:16px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #e6564a, #8f231b 75%);
+    box-shadow: 0 3px 4px rgba(0,0,0,0.35);
+  }
+
+  .stitch-underline{
+    background-image: repeating-linear-gradient(90deg, var(--red-string), var(--red-string) 6px, transparent 6px, transparent 12px);
+    height:2px;
+  }
+
+  .highlight-mark{
+    background: linear-gradient(120deg, var(--sticky-yellow) 0%, var(--sticky-yellow) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 42%;
+    background-position: 0 78%;
+    padding: 0 .15em;
+  }
+
+  .ink-underline{
+    position:relative;
+  }
+  .ink-underline::after{
+    content:"";
+    position:absolute; left:-2%; right:-2%; bottom:-4px; height:8px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='10'%3E%3Cpath d='M0 6 Q 15 0, 30 6 T 60 6 T 90 6 T 120 6 T 150 6 T 180 6 T 210 6' fill='none' stroke='%23ad3b2e' stroke-width='3'/%3E%3C/svg%3E") repeat-x;
+    background-size: 100px 10px;
+  }
+
+  .sticky-note{
+    transition: transform .25s ease, box-shadow .25s ease;
+    box-shadow: 3px 6px 10px rgba(0,0,0,0.18);
+  }
+  .sticky-note:hover{
+    transform: translateY(-6px) scale(1.04) !important;
+    box-shadow: 6px 14px 22px rgba(0,0,0,0.28);
+    z-index:20;
+  }
+
+  .corkboard{
+    background-color:#a9835a;
+    background-image:
+      radial-gradient(rgba(0,0,0,0.16) 1px, transparent 1.4px),
+      radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1.4px);
+    background-size: 5px 5px, 9px 9px;
+    background-position: 0 0, 3px 4px;
+  }
+
+  .tape{
+    background: rgba(244, 224, 138, 0.55);
+    border-left: 1px dashed rgba(0,0,0,0.15);
+    border-right: 1px dashed rgba(0,0,0,0.15);
+  }
+
+  ::selection{ background: var(--sticky-yellow); color: var(--ink); }
+
+  .nav-link{ position:relative; }
+  .nav-link::after{
+    content:""; position:absolute; left:0; bottom:-3px; width:0%; height:2px; background:var(--red-string);
+    transition: width .25s ease;
+  }
+  .nav-link:hover::after{ width:100%; }
+
+  .brush-circle{
+    position:absolute; inset:-6px -14px;
+    border: 3px solid var(--red-string);
+    border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%;
+    opacity: 0;
+  }
+
+  textarea:focus, input:focus{ outline:none; }
+
+  ::-webkit-scrollbar{ width:10px; }
+  ::-webkit-scrollbar-track{ background: var(--paper-dark); }
+  ::-webkit-scrollbar-thumb{ background: var(--kraft); border-radius:6px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  }
+</style>
+</head>
+
+<body class="paper-texture">
+
+<!-- ===================== NAV ===================== -->
+<header class="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm bg-[var(--paper)]/85 border-b border-[var(--kraft)]/30">
+  <div class="max-w-6xl mx-auto px-6 md:px-10 py-4 flex items-center justify-between">
+    <a href="#hero" class="font-hand text-3xl text-[var(--ink)] tracking-wide">M. Ortiz <span class="text-[var(--red-string)]">*</span></a>
+    <nav class="hidden md:flex gap-8 font-note text-[15px] text-[var(--ink-soft)]">
+      <a href="#about" class="nav-link">about</a>
+      <a href="#work" class="nav-link">work</a>
+      <a href="#skills" class="nav-link">skills</a>
+      <a href="#notes" class="nav-link">leave a note</a>
+      <a href="#contact" class="nav-link">contact</a>
+    </nav>
+    <button id="menuBtn" class="md:hidden font-note text-sm border border-[var(--ink)]/30 rounded px-3 py-1">menu</button>
+  </div>
+  <nav id="mobileMenu" class="hidden md:hidden flex-col gap-1 px-6 pb-4 font-note text-[var(--ink-soft)]">
+    <a href="#about" class="py-1">about</a>
+    <a href="#work" class="py-1">work</a>
+    <a href="#skills" class="py-1">skills</a>
+    <a href="#notes" class="py-1">leave a note</a>
+    <a href="#contact" class="py-1">contact</a>
+  </nav>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section id="hero" class="relative min-h-screen flex items-center pt-28 pb-16 torn-edge-bottom overflow-hidden">
+  <div class="paper-fibers"></div>
+
+  <!-- floating doodles -->
+  <div class="hidden md:block absolute top-32 right-16 w-28 h-28 border-2 border-[var(--kraft-dark)]/40 rounded-full rotate-6 opacity-60"></div>
+  <div class="hidden md:block absolute bottom-24 left-10 font-hand text-[var(--red-string)]/50 text-6xl rotate-[-8deg]">est. 2018</div>
+
+  <div class="max-w-6xl mx-auto px-6 md:px-10 w-full grid md:grid-cols-5 gap-10 items-center relative">
+    <div class="md:col-span-3 hero-copy">
+      <p class="font-note text-[var(--red-string)] text-sm md:text-base mb-3 tracking-wide">Dear reader — an entry from a designer & developer,</p>
+      <h1 class="font-hand text-6xl sm:text-7xl md:text-8xl leading-[0.95] text-[var(--ink)]">
+        I build things<br/>
+        <span class="relative inline-block">worth <span class="highlight-mark">remembering.</span></span>
+      </h1>
+      <p class="font-type text-[15px] md:text-base text-[var(--ink-soft)] mt-8 max-w-xl leading-relaxed">
+        Maya Ortiz — product designer &amp; front-end developer. This page is my open notebook:
+        half portfolio, half scrapbook, fully honest about the process behind the pretty pixels.
+      </p>
+      <div class="flex flex-wrap gap-4 mt-9">
+        <a href="#work" class="font-note px-6 py-3 bg-[var(--ink)] text-[var(--paper)] rounded-sm shadow-[3px_3px_0_var(--red-string)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0_var(--red-string)] transition-all">Flip to my work →</a>
+        <a href="#notes" class="font-note px-6 py-3 border-2 border-[var(--ink)]/70 rounded-sm hover:bg-[var(--ink)]/5 transition-all">Leave a sticky note</a>
+      </div>
+    </div>
+
+    <div class="md:col-span-2 flex justify-center">
+      <div class="relative w-64 sm:w-72 rotate-[-3deg] hero-photo">
+        <div class="bg-white p-3 pb-14 shadow-[8px_10px_20px_rgba(0,0,0,0.25)]">
+          <div class="aspect-[4/5] bg-gradient-to-br from-[#d9c39b] via-[#c9a26a] to-[#8f6b40] flex items-center justify-center">
+            <span class="font-hand text-7xl text-white/90">M.O.</span>
+          </div>
+          <p class="font-hand text-2xl text-center mt-3 text-[var(--ink-soft)]">my little corner of the internet</p>
+        </div>
+        <div class="absolute -top-4 -right-3 w-14 h-6 washi rotate-12"></div>
+        <div class="absolute -bottom-3 -left-4 w-16 h-6 washi -rotate-6"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 font-note text-xs text-[var(--ink-soft)] flex flex-col items-center gap-1 animate-bounce">
+    <span>scroll the page</span>
+    <span>↓</span>
+  </div>
+</section>
+
+<!-- ===================== ABOUT ===================== -->
+<section id="about" class="relative py-28 torn-edge-bottom bg-[var(--paper-dark)]/40">
+  <div class="paper-fibers"></div>
+  <div class="max-w-4xl mx-auto px-6 md:px-10">
+    <p class="font-note text-[var(--red-string)] text-sm mb-2 reveal-up">entry no. 01</p>
+    <h2 class="font-hand text-5xl md:text-6xl mb-10 reveal-up">A little about the handwriting</h2>
+
+    <div class="font-type text-[15px] md:text-[17px] leading-8 text-[var(--ink-soft)] space-y-6">
+      <p class="reveal-up">I started as a print designer, fell into code by accident, and never really left.
+      For the last six years I've worked at the seam between the two — building interfaces that
+      feel considered, not just functional.</p>
+      <p class="reveal-up">I care about the small stuff: the weight of a shadow, the timing of a
+      transition, the difference between a button that works and one that feels good to press.</p>
+      <p class="reveal-up">These days I split my time between freelance product work and a slow, ongoing
+      love affair with generative art on the side.</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mt-14">
+      <div class="reveal-up text-center">
+        <p class="font-hand text-5xl text-[var(--red-string)]">6+</p>
+        <p class="font-note text-sm text-[var(--ink-soft)]">years in the craft</p>
+      </div>
+      <div class="reveal-up text-center">
+        <p class="font-hand text-5xl text-[var(--red-string)]">42</p>
+        <p class="font-note text-sm text-[var(--ink-soft)]">shipped projects</p>
+      </div>
+      <div class="reveal-up text-center">
+        <p class="font-hand text-5xl text-[var(--red-string)]">9</p>
+        <p class="font-note text-sm text-[var(--ink-soft)]">sketchbooks filled</p>
+      </div>
+      <div class="reveal-up text-center">
+        <p class="font-hand text-5xl text-[var(--red-string)]">∞</p>
+        <p class="font-note text-sm text-[var(--ink-soft)]">cups of coffee</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WORK / CORKBOARD ===================== -->
+<section id="work" class="relative py-28 corkboard torn-edge-bottom">
+  <div class="max-w-6xl mx-auto px-6 md:px-10 relative">
+    <p class="font-note text-[#fbe9c7] text-sm mb-2 reveal-up">entry no. 02</p>
+    <h2 class="font-hand text-5xl md:text-6xl mb-3 text-[#fdf6e3] reveal-up">Pinned to the board</h2>
+    <p class="font-type text-[#f2e6c8]/80 text-sm mb-14 reveal-up">a few projects I keep tacked up where I can see them</p>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+
+      <div class="sticky-note relative pin rotate-[-4deg] p-6 pt-8" style="background:var(--sticky-yellow);">
+        <span class="font-note text-xs text-[var(--ink-soft)]">case study — fintech</span>
+        <h3 class="font-hand text-3xl mt-1 mb-2">Larder</h3>
+        <p class="font-type text-[13px] leading-6 text-[var(--ink-soft)]">A budgeting app redesigned around one idea: money should feel less scary. Reduced onboarding drop-off by 31%.</p>
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">UX</span>
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">React</span>
+        </div>
+      </div>
+
+      <div class="sticky-note relative pin rotate-[3deg] p-6 pt-8 mt-6 sm:mt-2" style="background:var(--sticky-pink);">
+        <span class="font-note text-xs text-[var(--ink-soft)]">case study — health</span>
+        <h3 class="font-hand text-3xl mt-1 mb-2">Nettle</h3>
+        <p class="font-type text-[13px] leading-6 text-[var(--ink-soft)]">A journaling app for chronic illness patients, built with a soft, non-clinical visual language.</p>
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Product</span>
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">iOS</span>
+        </div>
+      </div>
+
+      <div class="sticky-note relative pin rotate-[-2deg] p-6 pt-8 mt-2 sm:mt-8" style="background:var(--sticky-mint);">
+        <span class="font-note text-xs text-[var(--ink-soft)]">case study — agency</span>
+        <h3 class="font-hand text-3xl mt-1 mb-2">Kindling</h3>
+        <p class="font-type text-[13px] leading-6 text-[var(--ink-soft)]">Brand + site for a candle studio. Hand-lettered type system, tiny shop, big personality.</p>
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Branding</span>
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Shopify</span>
+        </div>
+      </div>
+
+      <div class="sticky-note relative pin rotate-[4deg] p-6 pt-8" style="background:var(--sticky-blue);">
+        <span class="font-note text-xs text-[var(--ink-soft)]">case study — tools</span>
+        <h3 class="font-hand text-3xl mt-1 mb-2">Marginalia</h3>
+        <p class="font-type text-[13px] leading-6 text-[var(--ink-soft)]">A Chrome extension for annotating the web like a library book. 40k+ installs, mostly by word of mouth.</p>
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">JS</span>
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Extension</span>
+        </div>
+      </div>
+
+      <div class="sticky-note relative pin rotate-[-3deg] p-6 pt-8 mt-4" style="background:var(--sticky-yellow);">
+        <span class="font-note text-xs text-[var(--ink-soft)]">case study — travel</span>
+        <h3 class="font-hand text-3xl mt-1 mb-2">Waypost</h3>
+        <p class="font-type text-[13px] leading-6 text-[var(--ink-soft)]">Trip-planning app styled like a paper map. Won a small design award nobody's heard of but me.</p>
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Mobile</span>
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Maps</span>
+        </div>
+      </div>
+
+      <div class="sticky-note relative pin rotate-[2deg] p-6 pt-8 mt-8 sm:mt-1" style="background:var(--sticky-pink);">
+        <span class="font-note text-xs text-[var(--ink-soft)]">case study — art</span>
+        <h3 class="font-hand text-3xl mt-1 mb-2">Static Bloom</h3>
+        <p class="font-type text-[13px] leading-6 text-[var(--ink-soft)]">A generative art series exploring paper-texture shaders. Shown at two small local galleries.</p>
+        <div class="flex gap-2 mt-4 flex-wrap">
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">Creative Code</span>
+          <span class="font-note text-xs bg-white/50 px-2 py-0.5 rounded-sm">WebGL</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SKILLS ===================== -->
+<section id="skills" class="relative py-28 torn-edge-bottom">
+  <div class="paper-fibers"></div>
+  <div class="max-w-5xl mx-auto px-6 md:px-10">
+    <p class="font-note text-[var(--red-string)] text-sm mb-2 reveal-up">entry no. 03</p>
+    <h2 class="font-hand text-5xl md:text-6xl mb-14 reveal-up">Things I keep underlining</h2>
+
+    <div class="grid md:grid-cols-2 gap-x-16 gap-y-10">
+      <div class="reveal-up">
+        <h3 class="font-hand text-3xl mb-4 relative inline-block ink-underline">Design</h3>
+        <ul class="font-type text-[15px] text-[var(--ink-soft)] space-y-3 mt-4">
+          <li>· Product & interaction design</li>
+          <li>· Design systems that survive contact with reality</li>
+          <li>· Typography & hand-lettering</li>
+          <li>· Motion & micro-interaction design</li>
+        </ul>
+      </div>
+      <div class="reveal-up">
+        <h3 class="font-hand text-3xl mb-4 relative inline-block ink-underline">Development</h3>
+        <ul class="font-type text-[15px] text-[var(--ink-soft)] space-y-3 mt-4">
+          <li>· React, Vue, and plain old vanilla JS</li>
+          <li>· Tailwind & CSS that doesn't fight back</li>
+          <li>· GSAP / scroll-driven storytelling</li>
+          <li>· Just enough backend to be dangerous</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-16 flex flex-wrap gap-3 reveal-up">
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[-2deg]">Figma</span>
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[1deg]">React</span>
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[-1deg]">GSAP</span>
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[2deg]">Tailwind</span>
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[-2deg]">Illustrator</span>
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[1deg]">Webflow</span>
+      <span class="font-note text-sm px-4 py-2 bg-white/70 rounded-full border border-[var(--ink)]/10 rotate-[-1deg]">Three.js</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== INTERACTIVE STICKY NOTES ===================== -->
+<section id="notes" class="relative py-28 corkboard torn-edge-bottom">
+  <div class="max-w-5xl mx-auto px-6 md:px-10">
+    <p class="font-note text-[#fbe9c7] text-sm mb-2 reveal-up">entry no. 04</p>
+    <h2 class="font-hand text-5xl md:text-6xl mb-3 text-[#fdf6e3] reveal-up">Leave a note on the board</h2>
+    <p class="font-type text-[#f2e6c8]/80 text-sm mb-10 reveal-up">write yourself (or me) a little something — it stays right here on the page</p>
+
+    <div class="reveal-up flex flex-col sm:flex-row gap-3 mb-12 bg-[#fdf6e3]/10 p-4 rounded-sm backdrop-blur-sm">
+      <input id="noteInput" maxlength="120" placeholder="type a note…" class="flex-1 font-note text-base px-4 py-3 rounded-sm border border-[#fdf6e3]/30 bg-[#fdf6e3]/90 placeholder:text-[var(--ink-soft)]/60" />
+      <select id="noteColor" class="font-note px-3 py-3 rounded-sm border border-[#fdf6e3]/30 bg-[#fdf6e3]/90">
+        <option value="var(--sticky-yellow)">yellow</option>
+        <option value="var(--sticky-pink)">pink</option>
+        <option value="var(--sticky-mint)">mint</option>
+        <option value="var(--sticky-blue)">blue</option>
+      </select>
+      <button id="addNoteBtn" class="font-note px-6 py-3 bg-[var(--ink)] text-[var(--paper)] rounded-sm shadow-[3px_3px_0_var(--red-string)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0_var(--red-string)] transition-all">pin it</button>
+    </div>
+
+    <div id="noteBoard" class="min-h-[220px] flex flex-wrap gap-8 items-start"></div>
+    <p id="noteEmpty" class="font-type text-[#f2e6c8]/60 text-sm italic">the board is empty — be the first to leave a note</p>
+  </div>
+</section>
+
+<!-- ===================== CONTACT ===================== -->
+<section id="contact" class="relative py-28">
+  <div class="paper-fibers"></div>
+  <div class="max-w-3xl mx-auto px-6 md:px-10 text-center">
+    <p class="font-note text-[var(--red-string)] text-sm mb-2 reveal-up">last entry</p>
+    <h2 class="font-hand text-5xl md:text-6xl mb-6 reveal-up">Let's write something together</h2>
+    <p class="font-type text-[15px] text-[var(--ink-soft)] leading-8 max-w-xl mx-auto reveal-up">
+      Open to freelance projects, collaborations, or just an email about your favorite fountain pen.
+      I read every message, usually with a cup of tea nearby.
+    </p>
+    <a href="mailto:hello@mayaortiz.design" class="reveal-up inline-block mt-10 font-hand text-4xl text-[var(--ink)] ink-underline">hello@mayaortiz.design</a>
+
+    <div class="reveal-up flex justify-center gap-6 mt-14 font-note text-sm text-[var(--ink-soft)]">
+      <a href="#" class="hover:text-[var(--red-string)] transition-colors">Instagram</a>
+      <a href="#" class="hover:text-[var(--red-string)] transition-colors">Dribbble</a>
+      <a href="#" class="hover:text-[var(--red-string)] transition-colors">GitHub</a>
+      <a href="#" class="hover:text-[var(--red-string)] transition-colors">LinkedIn</a>
+    </div>
+  </div>
+
+  <footer class="mt-20 text-center font-note text-xs text-[var(--ink-soft)]/70">
+    <p>bound &amp; typeset by hand, 2026 — thanks for reading to the last page.</p>
+  </footer>
+</section>
+
+<script>
+/* ===================== MOBILE MENU ===================== */
+const menuBtn = document.getElementById('menuBtn');
+const mobileMenu = document.getElementById('mobileMenu');
+menuBtn.addEventListener('click', () => {
+  mobileMenu.classList.toggle('hidden');
+  mobileMenu.classList.toggle('flex');
+});
+document.querySelectorAll('#mobileMenu a').forEach(a => a.addEventListener('click', () => {
+  mobileMenu.classList.add('hidden');
+  mobileMenu.classList.remove('flex');
+}));
+
+/* ===================== GSAP SCROLL ANIMATIONS ===================== */
+gsap.registerPlugin(ScrollTrigger);
+
+// Hero entrance
+gsap.from('.hero-copy > *', {
+  y: 30, opacity: 0, duration: 0.9, stagger: 0.12, ease: 'power3.out', delay: 0.2
+});
+gsap.from('.hero-photo', {
+  y: 20, opacity: 0, rotate: 6, duration: 1, ease: 'power3.out', delay: 0.4
+});
+
+// Generic reveal-up elements
+document.querySelectorAll('.reveal-up').forEach((el) => {
+  gsap.from(el, {
+    y: 40,
+    opacity: 0,
+    duration: 0.8,
+    ease: 'power2.out',
+    scrollTrigger: {
+      trigger: el,
+      start: 'top 88%',
+      toggleActions: 'play none none reverse'
+    }
+  });
+});
+
+// Sticky notes on corkboard: fly in with slight rotation, staggered
+gsap.utils.toArray('#work .sticky-note').forEach((note, i) => {
+  const finalRotate = getComputedStyle(note).getPropertyValue('transform');
+  gsap.from(note, {
+    y: 70,
+    opacity: 0,
+    rotate: (i % 2 === 0 ? -15 : 15),
+    duration: 0.7,
+    ease: 'back.out(1.4)',
+    scrollTrigger: {
+      trigger: '#work',
+      start: 'top 70%',
+      toggleActions: 'play none none reverse'
+    },
+    delay: i * 0.08
+  });
+});
+
+// Section headings ink-underline draw-in
+gsap.utils.toArray('h2').forEach((h) => {
+  gsap.from(h, {
+    scrollTrigger: { trigger: h, start: 'top 85%', toggleActions: 'play none none reverse' },
+    x: -20, opacity: 0, duration: 0.7, ease: 'power2.out'
+  });
+});
+
+/* ===================== SMOOTH ANCHOR SCROLL ===================== */
+document.querySelectorAll('a[href^="#"]').forEach(link => {
+  link.addEventListener('click', function (e) {
+    const targetId = this.getAttribute('href');
+    const target = document.querySelector(targetId);
+    if (target) {
+      e.preventDefault();
+      const offset = 70;
+      const top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  });
+});
+
+/* ===================== INTERACTIVE STICKY NOTE MAKER ===================== */
+const noteBoard = document.getElementById('noteBoard');
+const noteInput = document.getElementById('noteInput');
+const noteColor = document.getElementById('noteColor');
+const addNoteBtn = document.getElementById('addNoteBtn');
+const noteEmpty = document.getElementById('noteEmpty');
+
+function updateEmptyState(){
+  noteEmpty.style.display = noteBoard.children.length ? 'none' : 'block';
+}
+
+function createNote(text, color) {
+  const rotations = [-6, -3, -1, 2, 4, 6, -4, 3];
+  const rotate = rotations[Math.floor(Math.random() * rotations.length)];
+
+  const note = document.createElement('div');
+  note.className = 'sticky-note relative pin p-5 pt-7 w-48';
+  note.style.background = color;
+  note.style.transform = `rotate(${rotate}deg)`;
+
+  const p = document.createElement('p');
+  p.className = 'font-note text-[15px] text-[var(--ink)] leading-snug break-words pr-4';
+  p.textContent = text;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'absolute top-1 right-2 font-note text-[var(--ink)]/50 hover:text-[var(--red-string)] text-lg leading-none';
+  removeBtn.innerHTML = '&times;';
+  removeBtn.title = 'remove note';
+  removeBtn.addEventListener('click', () => {
+    gsap.to(note, {
+      opacity: 0, scale: 0.7, duration: 0.25, ease: 'power1.in',
+      onComplete: () => { note.remove(); updateEmptyState(); }
+    });
+  });
+
+  note.appendChild(removeBtn);
+  note.appendChild(p);
+  noteBoard.appendChild(note);
+
+  gsap.from(note, { y: -30, opacity: 0, scale: 0.6, duration: 0.4, ease: 'back.out(1.7)' });
+  updateEmptyState();
+}
+
+function handleAddNote() {
+  const text = noteInput.value.trim();
+  if (!text) {
+    gsap.fromTo(noteInput, { x: -4 }, { x: 4, duration: 0.06, repeat: 5, yoyo: true, clearProps: 'x' });
+    return;
+  }
+  createNote(text, noteColor.value);
+  noteInput.value = '';
+  noteInput.focus();
+}
+
+addNoteBtn.addEventListener('click', handleAddNote);
+noteInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAddNote(); });
+
+// seed a couple of starter notes
+createNote("thanks for stopping by my little diary :)", 'var(--sticky-yellow)');
+createNote("this note is draggable-feeling but not draggable — yet", 'var(--sticky-mint)');
+
+/* Refresh ScrollTrigger after fonts/images settle */
+window.addEventListener('load', () => ScrollTrigger.refresh());
+</script>
+
+<script>
+  const xhr = new XMLHttpRequest();
+  const requestUrl = "https://api.github.com/users/hiteshchoudary"
+  xhr.open('GET', requestUrl)
+  xhr.onreadystatechange = function(){
+    console.log(xhr.readyState);
+    if(xhr.readyState === 4){
+      const data = this.response;
+      console.log(typeof data)
+    }
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+/* Scroll Container */
+.spotify-scroll {
+    overflow-y: auto;
+}
+
+/* Width */
+.spotify-scroll::-webkit-scrollbar {
+    width: 12px;
+}
+
+/* Track */
+.spotify-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Thumb */
+.spotify-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 9999px;
+}
+
+/* Show thumb when hovering over the scroll area */
+.spotify-scroll:hover::-webkit-scrollbar-thumb {
+    background: #5a5a5a;
+}
+
+/* Thumb hover */
+.spotify-scroll::-webkit-scrollbar-thumb:hover {
+    background: #7a7a7a;
+}
+
+/* Firefox */
+.spotify-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.spotify-scroll:hover {
+    scrollbar-color: #5a5a5a transparent;
+
+}
+
+
+
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.card-wrapper {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px;
+    border-radius: 8px;
+    height: 100%;
+    background: transparent;
+    position: relative;
+    background-color: #121212;
+}
+
+/* @media screen and (min-width : 890px) {
+    .card-wrapper {
+        width: 200px;
+    }
+}
+
+@media screen and (max-width : 600px) {
+    .card-wrapper {
+        width: 100px;
+
+    }
+} */
+
+
+.card-wrapper:hover {
+    background-color: #1B1B1B;
+}
+
+.card-wrapper a:hover {
+    text-decoration: underline
+}
+
+
+#artists .card-wrapper:hover {
+    background-color: #1B1B1B;
+}
+
+#artists .card-wrapper a:hover {
+    text-decoration: underline
+}
+
+.group:hover .play-icon {
+    opacity: 1;
+}
+
+#artists img {
+    border-radius: 100%;
+    
+}
+
+
+.play a {
+    color: white;
+}
+
+/* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#45484d+37,000000+100 */
+ /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */

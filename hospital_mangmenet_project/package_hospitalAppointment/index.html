@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Managment</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- <script>
+        tailwind.config = { theme: { extend: { colors: { brand: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b' } } } } };
+    </script> -->
+
+</head>
+
+<body class="min-h-screen bg-green-100">
+    <nav class="w-full h-20 bg-red  bg-green-400 flex  flex-col items-start px-10 py-3 sticky top-0 ">
+        <h1 class="font-bold text-black text-3xl text-shadow-md">hospital booking</h1>
+        <p class="text-black/90 font-thin">book hospital reliable now</p>
+    </nav>
+    <!-- wave divider signature element -->
+    <svg class="block w-full text-[var(--paper)] rotate-[180deg] sticky top-20" viewBox="0 0 1440 44" fill="#05DF73"
+        preserveAspectRatio="none" style="height: 28px;">
+        <path d="M0,22 C240,44 480,0 720,11 C960,22 1200,44 1440,16 L1440,44 L0,44 Z"></path>
+    </svg>
+
+    <section class="appointment w-full h-screen bg-green-100 flex gap-5  mt-10 sticky top-50">
+        
+        
+        <div class=" h-full bg-white/90 rounded-3xl w-70 p-10 border-t ">
+            <div class="bg-white rounded-3xl border border-[#BCE6DC] shadow-sm p-5 space-y-4">
+                <p class="font-display font-bold text-[#0B4F47] text-base">
+                    Why families choose us
+                </p>
+
+                <div class="flex items-start gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-[#D9F0EA] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B4F47" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 21c-4-3-8-6.5-8-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 4.5-4 8-8 11z" />
+                        </svg>
+                    </span>
+                    <p class="text-sm text-slate-600">
+                        Kid-friendly waiting rooms and gentle, patient staff
+                    </p>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-[#D9F0EA] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B4F47" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 3" />
+                        </svg>
+                    </span>
+                    <p class="text-sm text-slate-600">
+                        Same-week appointments across every department
+                    </p>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-[#D9F0EA] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B4F47" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7l-9-5Z" />
+                        </svg>
+                    </span>
+                    <p class="text-sm text-slate-600">
+                        Board-certified doctors, fully licensed hospitals
+                    </p>
+                </div>
+
+                <div class="pt-2 border-t border-dashed border-[#BCE6DC]">
+                    <p class="text-xs text-gray-800">
+                        Pick a hospital to see its departments and available doctors.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        
+        <div class="bg-white/90 flex-1 rounded-3xl ">
+            <div class="w-full flex justify-between px-3 gap-3 bg-gradient-to-br from-[#F0FDF4] via-[#DCFCE7] to-[#86EFAC]  rounded-md p-5 items-center rounded-3xl border-t border-gray-600">
+                <h2 class="text-xl font-bold">Most reliabel booking software</h2>
+                <div>
+                    <button id="book-appoint-btn"
+                    class="p-2 hover:underline bg-gray-200 hover:bg-gray-300 rounded-xl font-bold shadow shadow-gray-800">
+                    book appointment
+                </button>
+                <button id="cancel-appoint-btn"
+                    class="p-2 hover:underline bg-gray-200 hover:bg-gray-300 rounded-xl font-bold shadow shadow-gray-800">
+                    cancel appointment
+                </button>
+                </div>
+            </div>
+
+            <div id="page-hospitals" class="w-full h-[90vh] flex p-5 gap-5 flex-wrap overflow-y-scroll bg-gradient-to-br from-white via-emerald-50 to-emerald-200"></div>
+
+        </div>
+
+        <div id="book-appointment-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black/50"></div>
+
+            <div
+                class="absolute top-1/2 left-1/2 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+
+                <div class="p-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">
+                            Book Appointment
+                        </h2>
+
+                        <button id="close-appoint-btn" class="p-2 rounded-lg hover:bg-gray-100">
+                            ✕
+                        </button>
+                    </div>
+
+                    <form id="appointment-form" class="space-y-5">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Full Name *
+                                </label>
+                                <input id="member-name" type="text" placeholder="Enter your full name"
+                                    autocomplete="name"
+                                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Email *
+                                </label>
+                                <input id="member-email" type="email" placeholder="johncena@gmail.com"
+                                    autocomplete="email"
+                                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Phone *
+                                </label>
+                                <input id="phone-no" type="tel" placeholder="+91 943XX XXXXX" autocomplete="tel"
+                                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Address
+                                </label>
+                                <input id="member-address" type="text" placeholder="123 Main St, City, State"
+                                    autocomplete="street-address"
+                                    class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Time Slot *
+                                </label>
+
+                                <select id="time-slot" class="w-full border rounded-lg px-3 py-2">
+                                    <option value="">Select Time</option>
+                                    <option>09:00 AM</option>
+                                    <option>09:30 AM</option>
+                                    <option>10:00 AM</option>
+                                    <option>10:30 AM</option>
+                                    <option>11:00 AM</option>
+                                    <option>11:30 AM</option>
+                                    <option>02:00 PM</option>
+                                    <option>02:30 PM</option>
+                                    <option>03:00 PM</option>
+                                    <option>03:30 PM</option>
+                                    <option>04:00 PM</option>
+                                    <option>04:30 PM</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Hospital *
+                                </label>
+
+                                <select id="hospital" class="w-full border rounded-lg px-3 py-2">
+                                    <option value="">Select Hospital</option>
+                                    <option>City General Hospital</option>
+                                    <option>Metro Health Center</option>
+                                    <option>Sunrise Community Hospital</option>
+                                    <option>Apex Medical Institute</option>
+                                    <option>Pacific View Hospital</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="form-group flex flex-col" data-field="date">
+                                    <label for="date">Preferred Date</label>
+                                    <input type="date" id="date" min="today"
+                                        class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                    <div id="error" class="text-red-500"></div>
+
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Department *
+                                </label>
+
+                                <select id="department" class="w-full border rounded-lg px-3 py-2" required>
+                                    <option value="">Select Department</option>
+                                    <option>General Medicine</option>
+                                    <option>Cardiology</option>
+                                    <option>Orthopedics</option>
+                                    <option>Dermatology</option>
+                                    <option>Pediatrics</option>
+                                    <option>Neurology</option>
+                                    <option>ENT</option>
+                                    <option>Ophthalmology</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1">
+                                    Doctor *
+                                </label>
+
+                                <select id="doctor" class="w-full border rounded-lg px-3 py-2">
+                                    <option value="">Select Doctor</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600 font-medium mb-1" for="reason">Reason for
+                                    Visit *</label>
+                                <textarea class="w-full border border-gray-600 rounded-lg px-3 py-2 placeholder-black"
+                                    id="reason"
+                                    placeholder="Briefly describe your symptoms or reason for visit..."></textarea>
+                            </div>
+
+                        </div>
+
+                        <div id="member-form-error" class="hidden text-red-500 text-sm"></div>
+
+                        <div class="flex gap-3 pt-2">
+                            <button type="submit" id="apnt-confirm-btn"
+                                class="flex-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg py-2">
+                                Confirm Appointment
+                            </button>
+
+                            <button id="apnt-cancel-btn" type="button"
+                                class="flex-1 bg-gray-200 hover:bg-gray-300 rounded-lg py-2">
+                                Cancel
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+
+
+
+    </section>
+
+
+    <script src="./index.js" type="module" defer></script>
+    <!-- <script src="./admin.js" type="module"></script>
+    <script src="./data.js" type="module"></script> -->
+</body>
+
+</html>

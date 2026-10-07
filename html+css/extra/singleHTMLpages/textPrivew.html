@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image Editor — Ox Alpha</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center p-5 gap-4 font-sans">
+
+  <h2 class="text-2xl font-bold">🖼️ Image Editor — Multi Text</h2>
+
+  <!-- Top controls -->
+  <div class="bg-slate-800 rounded-xl p-4 flex flex-wrap items-center gap-3 shadow-lg">
+    <input type="file" id="upload" accept="image/*"
+           class="text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-violet-600 file:text-white file:cursor-pointer hover:file:bg-violet-500 cursor-pointer">
+    <button id="addText"
+            class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-medium transition">➕ Add Text (click on image)</button>
+    <button id="download"
+            class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-medium transition">⬇ Download</button>
+  </div>
+
+  <!-- Selected text controls -->
+  <div id="textControls" class="bg-slate-800 rounded-xl p-4 flex flex-wrap items-center gap-3 shadow-lg hidden">
+    <input type="text" id="layerText" placeholder="Enter text"
+           class="bg-slate-700 px-3 py-2 rounded-lg outline-none focus:ring-2 ring-violet-500 w-48">
+    <input type="color" id="layerColor" value="#ffffff" class="w-10 h-10 rounded-lg cursor-pointer bg-slate-700 p-1">
+    <label class="text-sm text-slate-400">Size <span id="sizeVal" class="text-slate-100">48</span></label>
+    <input type="range" id="layerSize" min="10" max="200" value="48" class="w-28 accent-violet-500">
+    <label class="text-sm text-slate-400">Rotate <span id="rotVal" class="text-slate-100">0</span>°</label>
+    <input type="range" id="layerRot" min="-180" max="180" value="0" class="w-28 accent-violet-500">
+    <select id="layerFont" class="bg-slate-700 px-3 py-2 rounded-lg outline-none">
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Impact">Impact</option>
+      <option value="Verdana">Verdana</option>
+    </select>
+    <button id="deleteLayer"
+            class="bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-lg font-medium transition">🗑 Delete</button>
+  </div>
+
+  <canvas id="canvas" width="800" height="500"
+          class="max-w-[90vw] rounded-xl bg-slate-950 cursor-crosshair shadow-2xl"></canvas>
+
+  <!-- Layer list -->
+  <div id="layerList" class="bg-slate-800 rounded-xl p-4 w-72 max-h-36 overflow-y-auto shadow-lg hidden">
+    <p class="text-sm text-slate-400 mb-2">Text Layers (click to select):</p>
+    <div id="layers" class="flex flex-col gap-1"></div>
+  </div>
+
+  <p class="text-slate-500 text-sm">Tip: with "Add Text" armed, click the image to place text. Click an existing text to select & drag it.</p>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const upload = document.getElementById('upload');
+const textControls = document.getElementById('textControls');
+const layerList = document.getElementById('layerList');
+const layersDiv = document.getElementById('layers');
+
+let img = null;
+let texts = [];          // {text, x, y, size, color, rot, font}
+let selected = -1;
+let placing = false;     // waiting to place a new text
+let dragging = false;
+let dragOffset = { x: 0, y: 0 };
+
+// ---------- Upload ----------
+upload.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    img = new Image();
+    img.onload = () => {
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      draw();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---------- Arm "add text" mode ----------
+document.getElementById('addText').addEventListener('click', () => {
+  placing = true;
+  canvas.style.cursor = 'crosshair';
+});
+
+// ---------- Draw ----------
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (img) {
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#555';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Upload an image, then add text boxes', canvas.width / 2, canvas.height / 2);
+    ctx.textAlign = 'left';
+  }
+
+  texts.forEach((t, i) => {
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    ctx.rotate(t.rot * Math.PI / 180);
+    ctx.font = `bold t.sizepx{t.size}pxt.sizepx{t.font}`;
+    ctx.fillStyle = t.color;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 5;
+    ctx.fillText(t.text, 0, 0);
+    ctx.shadowBlur = 0;
+    if (i === selected) {
+      const w = ctx.measureText(t.text).width;
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.strokeRect(-4, -t.size, w + 8, t.size + 8);
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  });
+}
+
+// ---------- Hit test ----------
+function hitTest(mx, my) {
+  for (let i = texts.length - 1; i >= 0; i--) {
+    const t = texts[i];
+    ctx.font = `bold t.sizepx{t.size}pxt.sizepx{t.font}`;
+    const w = ctx.measureText(t.text).width;
+    const rad = -t.rot * Math.PI / 180;
+    const dx = mx - t.x, dy = my - t.y;
+    const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+    const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+    if (lx >= -4 && lx <= w + 4 && ly >= -t.size - 4 && ly <= 4) return i;
+  }
+  return -1;
+}
+
+// ---------- Canvas click / drag ----------
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (canvas.width / r.width),
+    y: (e.clientY - r.top) * (canvas.height / r.height)
+  };
+}
+
+canvas.addEventListener('mousedown', e => {
+  const p = getPos(e);
+
+  if (placing) {
+    texts.push({ text: 'New Text', x: p.x, y: p.y, size: 48, color: '#ffffff', rot: 0, font: 'Arial' });
+    selected = texts.length - 1;
+    placing = false;
+    canvas.style.cursor = 'crosshair';
+    syncControls();
+    renderLayers();
+    draw();
+    return;
+  }
+
+  selected = hitTest(p.x, p.y);
+  if (selected >= 0) {
+    dragging = true;
+    dragOffset.x = p.x - texts[selected].x;
+    dragOffset.y = p.y - texts[selected].y;
+    canvas.style.cursor = 'move';
+    syncControls();
+  } else {
+    textControls.classList.add('hidden');
+    canvas.style.cursor = 'crosshair';
+  }
+  renderLayers();
+  draw();
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (!dragging || selected < 0) return;
+  const p = getPos(e);
+  texts[selected].x = p.x - dragOffset.x;
+  texts[selected].y = p.y - dragOffset.y;
+  draw();
+});
+
+window.addEventListener('mouseup', () => { dragging = false; canvas.style.cursor = 'crosshair'; });
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  const t = e.touches[0];
+  canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: t.clientX, clientY: t.clientY }));
+  e.preventDefault();
+});
+canvas.addEventListener('touchmove', e => {
+  const t = e.touches[0];
+  canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: t.clientX, clientY: t.clientY }));
+  e.preventDefault();
+});
+window.addEventListener('touchend', () => dragging = false);
+
+// ---------- Controls sync ----------
+function syncControls() {
+  if (selected < 0) { textControls.classList.add('hidden'); return; }
+  const t = texts[selected];
+  textControls.classList.remove('hidden');
+  document.getElementById('layerText').value = t.text;
+  document.getElementById('layerColor').value = t.color;
+  document.getElementById('layerSize').value = t.size;
+  document.getElementById('sizeVal').textContent = t.size;
+  document.getElementById('layerRot').value = t.rot;
+  document.getElementById('rotVal').textContent = t.rot;
+  document.getElementById('layerFont').value = t.font;
+}
+
+document.getElementById('layerText').addEventListener('input', e => {
+  if (selected < 0) return;
+  texts[selected].text = e.target.value;
+  renderLayers(); draw();
+});
+document.getElementById('layerColor').addEventListener('input', e => {
+  if (selected < 0) return;
+  texts[selected].color = e.target.value; draw();
+});
+document.getElementById('layerSize').addEventListener('input', e => {
+  if (selected < 0) return;
+  texts[selected].size = +e.target.value;
+  document.getElementById('sizeVal').textContent = e.target.value;
+  draw();
+});
+document.getElementById('layerRot').addEventListener('input', e => {
+  if (selected < 0) return;
+  texts[selected].rot = +e.target.value;
+  document.getElementById('rotVal').textContent = e.target.value;
+  draw();
+});
+document.getElementById('layerFont').addEventListener('change', e => {
+  if (selected < 0) return;
+  texts[selected].font = e.target.value; draw();
+});
+document.getElementById('deleteLayer').addEventListener('click', () => {
+  if (selected < 0) return;
+  texts.splice(selected, 1);
+  selected = -1;
+  syncControls(); renderLayers(); draw();
+});
+
+// ---------- Layer list ----------
+function renderLayers() {
+  layersDiv.innerHTML = '';
+  if (texts.length === 0) { layerList.classList.add('hidden'); return; }
+  layerList.classList.remove('hidden');
+  texts.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'px-3 py-2 rounded-lg cursor-pointer text-sm ' +
+      (i === selected ? 'bg-violet-600' : 'bg-slate-700 hover:bg-slate-600');
+    div.textContent = '📝 ' + (t.text || '(empty)');
+    div.onclick = () => { selected = i; syncControls(); renderLayers(); draw(); };
+    layersDiv.appendChild(div);
+  });
+}
+
+// ---------- Download ----------
+document.getElementById('download').addEventListener('click', () => {
+  if (!img) { alert('Please upload an image first!'); return; }
+  const a = document.createElement('a');
+  a.download = 'edited-image.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+});
+
+draw();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

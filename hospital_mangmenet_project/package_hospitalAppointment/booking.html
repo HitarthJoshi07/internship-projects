@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedBoard — Doctor Scheduling Kanban | Hospital Management System</title>
+
+    <!-- =============================================
+         EXTERNAL DEPENDENCIES
+         ============================================= -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- =============================================
+         TAILWIND CONFIGURATION
+         ============================================= -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50:  '#eef4ff',
+                            100: '#dae6ff',
+                            200: '#bdd4ff',
+                            300: '#90b8ff',
+                            400: '#5c8eff',
+                            500: '#3366ff',
+                            600: '#1a4aff',
+                            700: '#1035e6',
+                            800: '#0e2db8',
+                            900: '#112d90',
+                            950: '#0e1f57',
+                        },
+                        slate: {
+                            25:  '#fcfcfd',
+                            50:  '#f8fafc',
+                            75:  '#f1f4f9',
+                            100: '#e8ecf4',
+                            200: '#d4dae6',
+                            300: '#b0bdd1',
+                            400: '#8494ad',
+                            500: '#64748b',
+                            600: '#4b5a72',
+                            700: '#3d4a5e',
+                            800: '#2d3748',
+                            900: '#1a2332',
+                            950: '#0f1623',
+                        },
+                        success: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857' },
+                        warning: { 50: '#fffbeb', 100: '#fef3c7', 500: '#f59e0b', 600: '#d97706', 700: '#b45309' },
+                        danger:  { 50: '#fef2f2', 100: '#fee2e2', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c' },
+                        info:    { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+                    },
+                    boxShadow: {
+                        'card':    '0 1px 3px 0 rgba(15,22,35,0.06), 0 1px 2px -1px rgba(15,22,35,0.06)',
+                        'card-md': '0 4px 6px -1px rgba(15,22,35,0.06), 0 2px 4px -2px rgba(15,22,35,0.06)',
+                        'card-lg': '0 10px 15px -3px rgba(15,22,35,0.08), 0 4px 6px -4px rgba(15,22,35,0.04)',
+                        'card-xl': '0 20px 25px -5px rgba(15,22,35,0.1), 0 8px 10px -6px rgba(15,22,35,0.04)',
+                        'elevated': '0 0 0 1px rgba(15,22,35,0.04), 0 4px 16px rgba(15,22,35,0.08)',
+                        'float':   '0 12px 40px -8px rgba(15,22,35,0.18)',
+                    },
+                    animation: {
+                        'fade-in':   'fadeIn 0.3s ease-out forwards',
+                        'slide-up':  'slideUp 0.35s ease-out forwards',
+                        'slide-in':  'slideIn 0.35s cubic-bezier(0.16,1,0.3,1) forwards',
+                        'scale-in':  'scaleIn 0.2s ease-out forwards',
+                        'shimmer':   'shimmer 1.8s infinite',
+                        'pulse-dot': 'pulseDot 2s ease-in-out infinite',
+                        'conflict':  'conflictGlow 1.5s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn:    { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp:   { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        slideIn:   { '0%': { opacity: '0', transform: 'translateX(16px)' }, '100%': { opacity: '1', transform: 'translateX(0)' } },
+                        scaleIn:   { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+                        shimmer:   { '0%': { backgroundPosition: '-200% 0' }, '100%': { backgroundPosition: '200% 0' } },
+                        pulseDot:  { '0%,100%': { transform: 'scale(1)', opacity: '1' }, '50%': { transform: 'scale(1.4)', opacity: '0.7' } },
+                        conflictGlow: { '0%,100%': { boxShadow: '0 0 0 0 rgba(239,68,68,0.3)' }, '50%': { boxShadow: '0 0 0 6px rgba(239,68,68,0)' } },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <!-- =============================================
+         CUSTOM STYLES
+         ============================================= -->
+    <style>
+        /* ===========================================
+           ROOT VARIABLES
+           =========================================== */
+        :root {
+            --header-h: 60px;
+            --analytics-h: 80px;
+            --filter-h: 48px;
+            --pool-w: 310px;
+            --drawer-w: 460px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* ===========================================
+           BASE RESETS
+           =========================================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+            background: #f1f4f9;
+            color: #1a2332;
+            overflow: hidden;
+            height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ===========================================
+           CUSTOM SCROLLBARS
+           =========================================== */
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #d4dae6; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #8494ad; }
+
+        .thin-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+        .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+        .thin-scroll::-webkit-scrollbar-thumb { background: #e8ecf4; border-radius: 10px; }
+        .thin-scroll::-webkit-scrollbar-thumb:hover { background: #b0bdd1; }
+
+        /* ===========================================
+           GLASS MORPHISM
+           =========================================== */
+        .glass {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+        }
+
+        .glass-subtle {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px) saturate(150%);
+            -webkit-backdrop-filter: blur(8px) saturate(150%);
+        }
+
+        /* ===========================================
+           SKELETON LOADING
+           =========================================== */
+        .skeleton {
+            background: linear-gradient(90deg, #e8ecf4 25%, #f1f4f9 37%, #e8ecf4 63%);
+            background-size: 400% 100%;
+            animation: shimmer 1.8s ease-in-out infinite;
+            border-radius: 6px;
+        }
+
+        .skeleton-circle { border-radius: 50%; }
+        .skeleton-text { height: 12px; }
+        .skeleton-title { height: 16px; width: 60%; }
+        .skeleton-avatar { width: 40px; height: 40px; }
+        .skeleton-card { height: 120px; border-radius: 12px; }
+
+        /* ===========================================
+           DRAG & DROP VISUAL STATES
+           =========================================== */
+        .drag-source {
+            opacity: 0.35 !important;
+            transform: scale(0.96) !important;
+            pointer-events: none;
+        }
+
+        .drop-target-valid {
+            background: rgba(51, 102, 255, 0.04) !important;
+            border-color: rgba(51, 102, 255, 0.4) !important;
+            box-shadow: inset 0 0 0 1px rgba(51, 102, 255, 0.12), 0 0 0 3px rgba(51, 102, 255, 0.08) !important;
+        }
+
+        .drop-target-invalid {
+            background: rgba(239, 68, 68, 0.04) !important;
+            border-color: rgba(239, 68, 68, 0.4) !important;
+            box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.12), 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+        }
+
+        .drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transform: rotate(3deg) scale(1.04);
+            box-shadow: 0 20px 40px -8px rgba(15, 22, 35, 0.25);
+            opacity: 0.92;
+            transition: none;
+        }
+
+        /* ===========================================
+           TOAST SYSTEM
+           =========================================== */
+        #toastContainer {
+            position: fixed;
+            top: 72px;
+            right: 16px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .toast-item {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            box-shadow: 0 8px 32px -4px rgba(15, 22, 35, 0.16), 0 0 0 1px rgba(15, 22, 35, 0.04);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s var(--ease-out), opacity 0.3s ease;
+            font-size: 13px;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .toast-item.visible {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast-item.exiting {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 10px;
+            margin-top: 1px;
+        }
+
+        .toast-success .toast-icon { background: #d1fae5; color: #047857; }
+        .toast-success { border-left: 3px solid #10b981; }
+        .toast-error .toast-icon { background: #fee2e2; color: #b91c1c; }
+        .toast-error { border-left: 3px solid #ef4444; }
+        .toast-warning .toast-icon { background: #fef3c7; color: #b45309; }
+        .toast-warning { border-left: 3px solid #f59e0b; }
+        .toast-info .toast-icon { background: #dbeafe; color: #1d4ed8; }
+        .toast-info { border-left: 3px solid #3b82f6; }
+
+        /* ===========================================
+           DRAWER
+           =========================================== */
+        .drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 22, 35, 0.35);
+            backdrop-filter: blur(4px);
+            z-index: 8000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .drawer-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drawer-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: var(--drawer-w);
+            max-width: 92vw;
+            background: #ffffff;
+            box-shadow: -12px 0 48px -8px rgba(15, 22, 35, 0.18);
+            z-index: 8001;
+            transform: translateX(100%);
+            transition: transform 0.4s var(--ease-out);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer-panel.active {
+            transform: translateX(0);
+        }
+
+        /* ===========================================
+           MODAL
+           =========================================== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 22, 35, 0.45);
+            backdrop-filter: blur(6px);
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-dialog {
+            background: #ffffff;
+            border-radius: var(--radius-xl);
+            box-shadow: 0 24px 64px -12px rgba(15, 22, 35, 0.24), 0 0 0 1px rgba(15, 22, 35, 0.04);
+            width: 520px;
+            max-width: 100%;
+            max-height: 88vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.92) translateY(16px);
+            opacity: 0;
+            transition: transform 0.35s var(--ease-spring), opacity 0.25s ease;
+        }
+
+        .modal-backdrop.active .modal-dialog {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* ===========================================
+           FORM ELEMENTS
+           =========================================== */
+        .form-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9L12 15L18 9' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+        }
+
+        .form-input {
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3366ff;
+            box-shadow: 0 0 0 3px rgba(51, 102, 255, 0.12);
+        }
+
+        .form-input:hover:not(:focus) {
+            border-color: #b0bdd1;
+        }
+
+        /* ===========================================
+           STATUS BADGES
+           =========================================== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+
+        .status-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-available  { background: #d1fae5; color: #047857; }
+        .status-available .dot  { background: #059669; }
+        .status-scheduled  { background: #dbeafe; color: #1d4ed8; }
+        .status-scheduled .dot  { background: #2563eb; }
+        .status-busy       { background: #fef3c7; color: #92400e; }
+        .status-busy .dot       { background: #d97706; }
+        .status-off-duty   { background: #f1f4f9; color: #4b5a72; }
+        .status-off-duty .dot   { background: #64748b; }
+        .status-on-leave   { background: #fce7f3; color: #9d174d; }
+        .status-on-leave .dot   { background: #db2777; }
+        .status-conflict   { background: #fee2e2; color: #991b1b; animation: conflictGlow 1.5s ease-in-out infinite; }
+        .status-conflict .dot   { background: #dc2626; }
+
+        /* ===========================================
+           CARD INTERACTIONS
+           =========================================== */
+        .interactive-card {
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .interactive-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px -2px rgba(15, 22, 35, 0.1), 0 0 0 1px rgba(15, 22, 35, 0.03);
+        }
+
+        .draggable-card {
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .draggable-card:active { cursor: grabbing; }
+
+        /* ===========================================
+           KANBAN HORIZONTAL SCROLL
+           =========================================== */
+        .kanban-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ===========================================
+           DAY COLUMN TODAY HIGHLIGHT
+           =========================================== */
+        .day-column-today {
+            position: relative;
+        }
+
+        .day-column-today::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: var(--radius-lg);
+            padding: 2px;
+            background: linear-gradient(135deg, #3366ff 0%, #5c8eff 50%, #90b8ff 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* ===========================================
+           NOTIFICATION BELL
+           =========================================== */
+        .notif-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+        }
+
+        /* ===========================================
+           EMPTY STATE ILLUSTRATION
+           =========================================== */
+        .empty-state-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+        }
+
+        /* ===========================================
+           RESPONSIVE OVERRIDES
+           =========================================== */
+        @media (max-width: 1024px) {
+            :root { --pool-w: 270px; --drawer-w: 400px; }
+        }
+
+        @media (max-width: 768px) {
+            :root { --drawer-w: 100vw; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- =============================================
+         TOAST CONTAINER
+         ============================================= -->
+    <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- =============================================
+         APPOINTMENT DRAWER
+         ============================================= -->
+    <div class="drawer-backdrop" id="drawerBackdrop" role="presentation"></div>
+    <aside class="drawer-panel" id="drawerPanel" role="dialog" aria-label="Appointment Details">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+            <div>
+                <h2 class="text-base font-bold text-slate-900" id="drawerTitle">Appointments</h2>
+                <p class="text-xs text-slate-400 mt-0.5" id="drawerSubtitle">View schedule and appointment details</p>
+            </div>
+            <button id="drawerCloseBtn" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" aria-label="Close drawer">
+                <i class="fas fa-xmark text-sm"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto custom-scroll" id="drawerBody">
+            <!-- Populated by openAppointmentDrawer() -->
+        </div>
+    </aside>
+
+    <!-- =============================================
+         MODAL
+         ============================================= -->
+    <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+        <div class="modal-dialog" id="modalDialog">
+            <!-- Populated by assignDoctor(), editSchedule(), deleteSchedule() -->
+        </div>
+    </div>
+
+    <!-- =============================================
+         MOBILE POOL OVERLAY
+         ============================================= -->
+    <div class="fixed inset-0 z-[7000] hidden" id="mobilePoolOverlay">
+        <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" id="mobilePoolBg"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-[300px] max-w-[85vw] bg-white shadow-float transform -translate-x-full transition-transform duration-300 ease-out" id="mobilePoolSlide">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                <h2 class="text-sm font-bold text-slate-900">Doctor Pool</h2>
+                <button id="mobilePoolCloseBtn" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                    <i class="fas fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="px-3 py-2 border-b border-slate-100">
+                <div class="relative">
+                    <i class="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-xs"></i>
+                    <input type="text" id="mobilePoolSearchInput" placeholder="Search doctors..." class="form-input w-full h-8 pl-8 pr-3 text-xs bg-slate-50 border border-slate-200 rounded-lg placeholder:text-slate-300">
+                </div>
+            </div>
+            <div class="overflow-y-auto custom-scroll p-3 space-y-2" id="mobilePoolList" style="max-height: calc(100vh - 110px);"></div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         MAIN APPLICATION SHELL
+         ============================================= -->
+    <div class="flex flex-col h-screen">
+
+        <!-- ==========================================
+             HEADER
+             ========================================== -->
+        <header class="glass border-b border-slate-100 flex-shrink-0 relative z-50" style="height: var(--header-h);">
+            <div class="flex items-center justify-between h-full px-3 lg:px-5 gap-2">
+
+                <!-- Left Section: Logo + Selectors -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button id="mobileMenuBtn" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors" aria-label="Toggle doctor pool">
+                        <i class="fas fa-bars-staggered text-sm"></i>
+                    </button>
+                    <div class="hidden sm:flex items-center gap-2 mr-1">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-sm">
+                            <i class="fas fa-staff-snake text-white text-xs"></i>
+                        </div>
+                        <div class="leading-none">
+                            <span class="text-sm font-extrabold text-slate-900 tracking-tight">MedBoard</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:block w-px h-6 bg-slate-200 mx-1"></div>
+                    <select id="headerHospital" class="form-select form-input h-8 pl-2.5 text-xs font-medium bg-white border border-slate-200 rounded-lg w-[160px] lg:w-[200px]">
+                        <option value="">All Hospitals</option>
+                    </select>
+                    <select id="headerDepartment" class="form-select form-input h-8 pl-2.5 text-xs font-medium bg-white border border-slate-200 rounded-lg hidden md:block w-[150px] lg:w-[180px]">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+
+                <!-- Center: Search -->
+                <div class="hidden md:flex flex-1 max-w-sm mx-4">
+                    <div class="relative w-full group">
+                        <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs group-focus-within:text-brand-500 transition-colors"></i>
+                        <input type="text" id="headerSearch" placeholder="Search doctors, departments..." class="form-input w-full h-8 pl-9 pr-4 text-xs bg-white border border-slate-200 rounded-lg placeholder:text-slate-300">
+                    </div>
+                </div>
+
+                <!-- Right Section: Week + Actions -->
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <div class="hidden sm:flex items-center bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
+                        <button id="weekPrevBtn" class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors" aria-label="Previous week">
+                            <i class="fas fa-chevron-left text-[10px]"></i>
+                        </button>
+                        <button id="weekLabelBtn" class="h-7 px-2.5 flex items-center text-xs font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap">
+                            This Week
+                        </button>
+                        <button id="weekNextBtn" class="w-7 h-7 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors" aria-label="Next week">
+                            <i class="fas fa-chevron-right text-[10px]"></i>
+                        </button>
+                        <button id="weekTodayBtn" class="h-7 px-2 text-[10px] font-bold text-brand-600 rounded-md hover:bg-brand-50 transition-colors uppercase tracking-wider">
+                            Today
+                        </button>
+                    </div>
+                    <button id="mobileSearchBtn" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                        <i class="fas fa-magnifying-glass text-xs"></i>
+                    </button>
+                    <button id="notifBtn" class="relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" aria-label="Notifications">
+                        <i class="fas fa-bell text-sm"></i>
+                        <span class="notif-badge" id="notifDot"></span>
+                    </button>
+                    <button id="profileBtn" class="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Profile menu">
+                        <div class="w-7 h-7 rounded-full bg-brand-100 flex items-center justify-center">
+                            <span class="text-[10px] font-extrabold text-brand-700">AD</span>
+                        </div>
+                        <span class="hidden lg:block text-xs font-semibold text-slate-600">Admin</span>
+                        <i class="hidden lg:block fas fa-chevron-down text-[8px] text-slate-300"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ==========================================
+             ANALYTICS BAR
+             ========================================== -->
+        <div class="bg-white border-b border-slate-100 flex-shrink-0" style="height: var(--analytics-h);">
+            <div class="flex items-center h-full px-3 lg:px-5 gap-2.5 overflow-x-auto thin-scroll" id="analyticsContainer">
+                <!-- Populated by renderAnalytics() -->
+            </div>
+        </div>
+
+        <!-- ==========================================
+             FILTER BAR
+             ========================================== -->
+        <div class="bg-slate-50/80 border-b border-slate-100 flex-shrink-0 hidden md:block" style="height: var(--filter-h);">
+            <div class="flex items-center h-full px-3 lg:px-5 gap-2 overflow-x-auto thin-scroll">
+                <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest whitespace-nowrap mr-1 flex items-center gap-1.5">
+                    <i class="fas fa-sliders text-[9px]"></i> Filters
+                </span>
+                <select id="filterDoctor" class="form-select form-input h-7 pl-2 pr-7 text-[11px] font-medium bg-white border border-slate-200 rounded-md w-[140px]">
+                    <option value="">All Doctors</option>
+                </select>
+                <select id="filterSpecialization" class="form-select form-input h-7 pl-2 pr-7 text-[11px] font-medium bg-white border border-slate-200 rounded-md w-[160px]">
+                    <option value="">All Specializations</option>
+                </select>
+                <select id="filterDay" class="form-select form-input h-7 pl-2 pr-7 text-[11px] font-medium bg-white border border-slate-200 rounded-md w-[120px]">
+                    <option value="">All Days</option>
+                    <option value="monday">Monday</option>
+                    <option value="tuesday">Tuesday</option>
+                    <option value="wednesday">Wednesday</option>
+                    <option value="thursday">Thursday</option>
+                    <option value="friday">Friday</option>
+                    <option value="saturday">Saturday</option>
+                    <option value="sunday">Sunday</option>
+                </select>
+                <select id="filterShift" class="form-select form-input h-7 pl-2 pr-7 text-[11px] font-medium bg-white border border-slate-200 rounded-md w-[120px]">
+                    <option value="">All Shifts</option>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                    <option value="night">Night</option>
+                </select>
+                <select id="filterAvailability" class="form-select form-input h-7 pl-2 pr-7 text-[11px] font-medium bg-white border border-slate-200 rounded-md w-[120px]">
+                    <option value="">All Status</option>
+                    <option value="available">Available</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="busy">Busy</option>
+                    <option value="off-duty">Off Duty</option>
+                    <option value="on-leave">On Leave</option>
+                </select>
+                <button id="clearFiltersBtn" class="h-7 px-2.5 text-[11px] font-semibold text-brand-600 hover:bg-brand-50 rounded-md transition-colors whitespace-nowrap flex items-center gap-1">
+                    <i class="fas fa-rotate-left text-[9px]"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             MAIN CONTENT: POOL + KANBAN
+             ========================================== -->
+        <div class="flex flex-1 overflow-hidden min-h-0">
+
+            <!-- ======================================
+                 LEFT PANEL: DOCTOR POOL (DESKTOP)
+                 ====================================== -->
+            <aside id="poolPanel" class="hidden lg:flex flex-col border-r border-slate-100 bg-white flex-shrink-0" style="width: var(--pool-w);">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 flex-shrink-0">
+                    <div>
+                        <h2 class="text-[13px] font-bold text-slate-900">Doctor Pool</h2>
+                        <p class="text-[11px] text-slate-400 mt-0.5" id="poolCountLabel">0 doctors</p>
+                    </div>
+                    <div class="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+                        <button data-pool-view="grid" class="pool-view-btn w-6 h-6 flex items-center justify-center rounded-md bg-white text-brand-600 shadow-card text-[10px]">
+                            <i class="fas fa-grip"></i>
+                        </button>
+                        <button data-pool-view="list" class="pool-view-btn w-6 h-6 flex items-center justify-center rounded-md text-slate-300 hover:text-slate-500 text-[10px] transition-colors">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-3 py-2 border-b border-slate-100 flex-shrink-0">
+                    <div class="relative">
+                        <i class="fas fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
+                        <input type="text" id="poolSearchInput" placeholder="Filter pool..." class="form-input w-full h-7 pl-8 pr-3 text-[11px] bg-slate-50 border border-slate-200 rounded-lg placeholder:text-slate-300">
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scroll p-2.5 space-y-2" id="poolList">
+                    <!-- Populated by renderDoctors() -->
+                </div>
+            </aside>
+
+            <!-- ======================================
+                 KANBAN BOARD
+                 ====================================== -->
+            <main class="flex-1 overflow-hidden flex flex-col min-w-0">
+                <div class="kanban-scroll flex-1 overflow-y-auto custom-scroll p-3 lg:p-4" id="kanbanScrollArea">
+                    <div class="flex gap-3" id="kanbanColumns" style="min-width: max-content;">
+                        <!-- Populated by renderBoard() -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- =============================================
+         APPLICATION JAVASCRIPT
+         ============================================= -->
+    <script>
+    /* =============================================================
+       DATA LAYER — Placeholder Arrays
+       =============================================================
+       Replace each array with actual API response data.
+
+       Example:
+       const hospitals = await fetch('/api/v1/hospitals').then(r => r.json());
+       const departments = await fetch('/api/v1/departments').then(r => r.json());
+       etc.
+       ============================================================= */
+
+    // >>> API ENDPOINT: GET /api/v1/hospitals <<<
+    const hospitals = [
+        { id: 'hosp_01', name: 'City General Hospital',     code: 'CGH',  address: '123 Main Street, Downtown',      color: '#3366ff' },
+        { id: 'hosp_02', name: 'St. Mary Medical Center',   code: 'SMMC', address: '456 Oak Avenue, Westside',       color: '#7c3aed' },
+        { id: 'hosp_03', name: 'Sunrise Community Hospital', code: 'SCH',  address: '789 Pine Road, Eastside',        color: '#0891b2' },
+        { id: 'hosp_04', name: 'Metro Health Institute',    code: 'MHI',  address: '321 Elm Boulevard, Northgate',   color: '#d97706' },
+    ];
+
+    // >>> API ENDPOINT: GET /api/v1/departments <<<
+    const departments = [
+        { id: 'dept_01', name: 'Cardiology',          hospitalId: 'hosp_01', icon: 'fa-heart-pulse',    color: '#ef4444' },
+        { id: 'dept_02', name: 'Neurology',           hospitalId: 'hosp_01', icon: 'fa-brain',          color: '#8b5cf6' },
+        { id: 'dept_03', name: 'Orthopedics',         hospitalId: 'hosp_01', icon: 'fa-bone',           color: '#f97316' },
+        { id: 'dept_04', name: 'Pediatrics',          hospitalId: 'hosp_02', icon: 'fa-baby',           color: '#ec4899' },
+        { id: 'dept_05', name: 'Dermatology',         hospitalId: 'hosp_02', icon: 'fa-hand-dots',      color: '#14b8a6' },
+        { id: 'dept_06', name: 'Oncology',            hospitalId: 'hosp_03', icon: 'fa-ribbon',         color: '#6366f1' },
+        { id: 'dept_07', name: 'Emergency Medicine',   hospitalId: 'hosp_03', icon: 'fa-truck-medical',  color: '#ef4444' },
+        { id: 'dept_08', name: 'General Surgery',     hospitalId: 'hosp_04', icon: 'fa-scissors',       color: '#0ea5e9' },
+        { id: 'dept_09', name: 'Radiology',           hospitalId: 'hosp_04', icon: 'fa-x-ray',          color: '#a855f7' },
+        { id: 'dept_10', name: 'Internal Medicine',   hospitalId: 'hosp_01', icon: 'fa-stethoscope',    color: '#22c55e' },
+    ];
+
+    // >>> API ENDPOINT: GET /api/v1/doctors <<<
+    const doctors = [
+        { id: 'doc_01', name: 'Dr. Sarah Mitchell',    departmentId: 'dept_01', hospitalId: 'hosp_01', experience: 12, specialization: 'Interventional Cardiology',   status: 'available', photo: 'https://picsum.photos/seed/dr01/100/100.jpg',  room: 'A-101', phone: '+1-555-0101' },
+        { id: 'doc_02', name: 'Dr. James Chen',        departmentId: 'dept_02', hospitalId: 'hosp_01', experience: 8,  specialization: 'Neurophysiology',             status: 'available', photo: 'https://picsum.photos/seed/dr02/100/100.jpg',  room: 'A-204', phone: '+1-555-0102' },
+        { id: 'doc_03', name: 'Dr. Emily Rodriguez',   departmentId: 'dept_03', hospitalId: 'hosp_01', experience: 15, specialization: 'Joint Replacement Surgery',    status: 'available', photo: 'https://picsum.photos/seed/dr03/100/100.jpg',  room: 'B-105', phone: '+1-555-0103' },
+        { id: 'doc_04', name: 'Dr. Michael Patel',     departmentId: 'dept_04', hospitalId: 'hosp_02', experience: 6,  specialization: 'Neonatal Intensive Care',      status: 'available', photo: 'https://picsum.photos/seed/dr04/100/100.jpg',  room: 'C-302', phone: '+1-555-0104' },
+        { id: 'doc_05', name: 'Dr. Lisa Wang',         departmentId: 'dept_05', hospitalId: 'hosp_02', experience: 10, specialization: 'Cosmetic Dermatology',         status: 'available', photo: 'https://picsum.photos/seed/dr05/100/100.jpg',  room: 'C-401', phone: '+1-555-0105' },
+        { id: 'doc_06', name: 'Dr. Robert Kim',        departmentId: 'dept_06', hospitalId: 'hosp_03', experience: 18, specialization: 'Hematologic Oncology',        status: 'available', photo: 'https://picsum.photos/seed/dr06/100/100.jpg',  room: 'D-201', phone: '+1-555-0106' },
+        { id: 'doc_07', name: 'Dr. Amanda Foster',     departmentId: 'dept_07', hospitalId: 'hosp_03', experience: 9,  specialization: 'Trauma & Emergency Care',    status: 'available', photo: 'https://picsum.photos/seed/dr07/100/100.jpg',  room: 'E-101', phone: '+1-555-0107' },
+        { id: 'doc_08', name: 'Dr. David Thompson',    departmentId: 'dept_08', hospitalId: 'hosp_04', experience: 20, specialization: 'Laparoscopic Surgery',        status: 'available', photo: 'https://picsum.photos/seed/dr08/100/100.jpg',  room: 'F-301', phone: '+1-555-0108' },
+        { id: 'doc_09', name: 'Dr. Nina Kowalski',     departmentId: 'dept_09', hospitalId: 'hosp_04', experience: 7,  specialization: 'Diagnostic Imaging',          status: 'available', photo: 'https://picsum.photos/seed/dr09/100/100.jpg',  room: 'G-102', phone: '+1-555-0109' },
+        { id: 'doc_10', name: 'Dr. Carlos Martinez',   departmentId: 'dept_10', hospitalId: 'hosp_01', experience: 14, specialization: 'Endocrinology',                status: 'available', photo: 'https://picsum.photos/seed/dr10/100/100.jpg',  room: 'A-305', phone: '+1-555-0110' },
+        { id: 'doc_11', name: 'Dr. Rachel Green',      departmentId: 'dept_01', hospitalId: 'hosp_01', experience: 5,  specialization: 'Cardiac Electrophysiology',   status: 'on-leave',  photo: 'https://picsum.photos/seed/dr11/100/100.jpg',  room: 'A-102', phone: '+1-555-0111' },
+        { id: 'doc_12', name: 'Dr. Kevin OBrien',      departmentId: 'dept_02', hospitalId: 'hosp_01', experience: 11, specialization: 'Epilepsy & Seizure Disorders', status: 'available', photo: 'https://picsum.photos/seed/dr12/100/100.jpg',  room: 'A-205', phone: '+1-555-0112' },
+        { id: 'doc_13', name: 'Dr. Priya Sharma',      departmentId: 'dept_04', hospitalId: 'hosp_02', experience: 8,  specialization: 'Developmental Pediatrics',     status: 'available', photo: 'https://picsum.photos/seed/dr13/100/100.jpg',  room: 'C-303', phone: '+1-555-0113' },
+        { id: 'doc_14', name: 'Dr. Thomas Lee',        departmentId: 'dept_08', hospitalId: 'hosp_04', experience: 16, specialization: 'Cardiothoracic Surgery',      status: 'off-duty',  photo: 'https://picsum.photos/seed/dr14/100/100.jpg',  room: 'F-302', phone: '+1-555-0114' },
+        { id: 'doc_15', name: 'Dr. Maria Santos',      departmentId: 'dept_06', hospitalId: 'hosp_03', experience: 13, specialization: 'Radiation Oncology',          status: 'available', photo: 'https://picsum.photos/seed/dr15/100/100.jpg',  room: 'D-202', phone: '+1-555-0115' },
+        { id: 'doc_16', name: 'Dr. Andrew Wright',     departmentId: 'dept_07', hospitalId: 'hosp_03', experience: 4,  specialization: 'Pediatric Emergency Medicine', status: 'available', photo: 'https://picsum.photos/seed/dr16/100/100.jpg',  room: 'E-102', phone: '+1-555-0116' },
+        { id: 'doc_17', name: 'Dr. Helen Park',        departmentId: 'dept_10', hospitalId: 'hosp_01', experience: 9,  specialization: 'Gastroenterology',             status: 'busy',      photo: 'https://picsum.photos/seed/dr17/100/100.jpg',  room: 'A-306', phone: '+1-555-0117' },
+        { id: 'doc_18', name: 'Dr. Richard Brooks',    departmentId: 'dept_03', hospitalId: 'hosp_01', experience: 22, specialization: 'Spine Surgery',                status: 'available', photo: 'https://picsum.photos/seed/dr18/100/100.jpg',  room: 'B-106', phone: '+1-555-0118' },
+    ];
+
+    // >>> API ENDPOINT: GET /api/v1/appointments <<<
+    const appointments = [
+        { id: 'apt_01', doctorId: 'doc_01', patientName: 'John Henderson',     time: '09:00', date: 'monday',    status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'Follow-up cardiac evaluation' },
+        { id: 'apt_02', doctorId: 'doc_01', patientName: 'Mary Clarkson',      time: '09:45', date: 'monday',    status: 'confirmed', payment: 'paid',     source: 'Walk-in',  notes: 'Blood pressure review' },
+        { id: 'apt_03', doctorId: 'doc_01', patientName: 'Steve Garcia',       time: '10:30', date: 'monday',    status: 'pending',   payment: 'unpaid',   source: 'Referral', notes: 'Chest pain assessment' },
+        { id: 'apt_04', doctorId: 'doc_01', patientName: 'Angela Peters',      time: '11:15', date: 'monday',    status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'ECG interpretation' },
+        { id: 'apt_05', doctorId: 'doc_02', patientName: 'Anna Lewis',         time: '10:00', date: 'tuesday',   status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'MRI scan review' },
+        { id: 'apt_06', doctorId: 'doc_02', patientName: 'Peter Williams',     time: '10:45', date: 'tuesday',   status: 'cancelled', payment: 'refunded', source: 'Phone',    notes: 'Rescheduled' },
+        { id: 'apt_07', doctorId: 'doc_03', patientName: 'Diana Ross',         time: '14:00', date: 'wednesday', status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'Knee replacement consultation' },
+        { id: 'apt_08', doctorId: 'doc_03', patientName: 'George Miller',      time: '15:00', date: 'wednesday', status: 'pending',   payment: 'unpaid',   source: 'Referral', notes: 'Hip pain evaluation' },
+        { id: 'apt_09', doctorId: 'doc_04', patientName: 'Baby Johnson',       time: '09:00', date: 'thursday',  status: 'confirmed', payment: 'paid',     source: 'Walk-in',  notes: 'Routine neonatal checkup' },
+        { id: 'apt_10', doctorId: 'doc_05', patientName: 'Susan Miller',       time: '11:00', date: 'friday',    status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'Acne treatment follow-up' },
+        { id: 'apt_11', doctorId: 'doc_05', patientName: 'Karen Taylor',       time: '11:45', date: 'friday',    status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'Skin rash examination' },
+        { id: 'apt_12', doctorId: 'doc_06', patientName: 'Robert Brown',       time: '15:00', date: 'monday',    status: 'pending',   payment: 'unpaid',   source: 'Referral', notes: 'Chemotherapy session #3' },
+        { id: 'apt_13', doctorId: 'doc_07', patientName: 'Jennifer Lopez',     time: '22:00', date: 'saturday',  status: 'confirmed', payment: 'paid',     source: 'Walk-in',  notes: 'Motor vehicle accident trauma' },
+        { id: 'apt_14', doctorId: 'doc_08', patientName: 'Mark Anderson',      time: '08:00', date: 'tuesday',   status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'Gallbladder removal pre-op' },
+        { id: 'apt_15', doctorId: 'doc_08', patientName: 'Linda Scott',        time: '08:45', date: 'tuesday',   status: 'confirmed', payment: 'paid',     source: 'Referral', notes: 'Appendectomy consult' },
+        { id: 'apt_16', doctorId: 'doc_09', patientName: 'Lisa Park',          time: '13:00', date: 'wednesday', status: 'confirmed', payment: 'paid',     source: 'Referral', notes: 'CT scan evaluation' },
+        { id: 'apt_17', doctorId: 'doc_10', patientName: 'David Kim',          time: '10:00', date: 'thursday',  status: 'pending',   payment: 'unpaid',   source: 'Online',   notes: 'Thyroid function test review' },
+        { id: 'apt_18', doctorId: 'doc_12', patientName: 'Karen White',        time: '09:00', date: 'friday',    status: 'confirmed', payment: 'paid',     source: 'Phone',    notes: 'Seizure management follow-up' },
+        { id: 'apt_19', doctorId: 'doc_15', patientName: 'Thomas Grant',       time: '14:00', date: 'monday',    status: 'confirmed', payment: 'paid',     source: 'Online',   notes: 'Radiation therapy planning' },
+        { id: 'apt_20', doctorId: 'doc_17', patientName: 'Nancy Reagan',       time: '11:00', date: 'thursday',  status: 'confirmed', payment: 'paid',     source: 'Walk-in',  notes: 'Endoscopy consultation' },
+    ];
+
+    // >>> API ENDPOINT: GET /api/v1/schedules <<<
+    const schedules = [
+        { id: 'sch_01', doctorId: 'doc_01', day: 'monday',    shift: 'morning',   startTime: '08:00', endTime: '12:00', room: 'A-101', patientCount: 4 },
+        { id: 'sch_02', doctorId: 'doc_02', day: 'tuesday',   shift: 'morning',   startTime: '09:00', endTime: '13:00', room: 'A-204', patientCount: 2 },
+        { id: 'sch_03', doctorId: 'doc_03', day: 'wednesday', shift: 'afternoon', startTime: '13:00', endTime: '17:00', room: 'B-105', patientCount: 2 },
+        { id: 'sch_04', doctorId: 'doc_04', day: 'thursday',  shift: 'morning',   startTime: '08:00', endTime: '12:00', room: 'C-302', patientCount: 1 },
+        { id: 'sch_05', doctorId: 'doc_05', day: 'friday',    shift: 'morning',   startTime: '10:00', endTime: '14:00', room: 'C-401', patientCount: 2 },
+        { id: 'sch_06', doctorId: 'doc_06', day: 'monday',    shift: 'afternoon', startTime: '14:00', endTime: '18:00', room: 'D-201', patientCount: 1 },
+        { id: 'sch_07', doctorId: 'doc_07', day: 'saturday',  shift: 'night',     startTime: '20:00', endTime: '02:00', room: 'E-101', patientCount: 1 },
+        { id: 'sch_08', doctorId: 'doc_08', day: 'tuesday',   shift: 'morning',   startTime: '07:00', endTime: '11:00', room: 'F-301', patientCount: 2 },
+        { id: 'sch_09', doctorId: 'doc_09', day: 'wednesday', shift: 'afternoon', startTime: '12:00', endTime: '16:00', room: 'G-102', patientCount: 1 },
+        { id: 'sch_10', doctorId: 'doc_10', day: 'thursday',  shift: 'morning',   startTime: '09:00', endTime: '13:00', room: 'A-305', patientCount: 1 },
+        { id: 'sch_11', doctorId: 'doc_12', day: 'friday',    shift: 'morning',   startTime: '08:00', endTime: '12:00', room: 'A-205', patientCount: 1 },
+        { id: 'sch_12', doctorId: 'doc_15', day: 'monday',    shift: 'afternoon', startTime: '13:00', endTime: '17:00', room: 'D-202', patientCount: 1 },
+        { id: 'sch_13', doctorId: 'doc_17', day: 'thursday',  shift: 'morning',   startTime: '10:00', endTime: '14:00', room: 'A-306', patientCount: 1 },
+        { id: 'sch_14', doctorId: 'doc_18', day: 'wednesday', shift: 'morning',   startTime: '08:00', endTime: '12:00', room: 'B-106', patientCount: 0 },
+    ];
+
+    /* =============================================================
+       APPLICATION STATE
+       ============================================================= */
+    const AppState = {
+        weekStart: null,
+        hospitalFilter: '',
+        departmentFilter: '',
+        searchQuery: '',
+        poolSearchQuery: '',
+        filters: {
+            doctor: '',
+            specialization: '',
+            day: '',
+            shift: '',
+            availability: '',
+        },
+        dragState: {
+            active: false,
+            doctorId: null,
+            sourceScheduleId: null,
+            ghostEl: null,
+            sourceEl: null,
+        },
+        poolView: 'grid',
+        conflictHighlight: null,
+        loading: true,
+    };
+
+    /* =============================================================
+       CONSTANTS
+       ============================================================= */
+    const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const DAY_LABELS = { monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday', thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday', sunday: 'Sunday' };
+    const SHIFTS = ['morning', 'afternoon', 'evening', 'night'];
+    const SHIFT_META = {
+        morning:   { label: 'Morning',   icon: 'fa-sun',       color: '#d97706', bg: '#fffbeb', start: '06:00', end: '12:00' },
+        afternoon: { label: 'Afternoon', icon: 'fa-cloud-sun', color: '#ea580c', bg: '#fff7ed', start: '12:00', end: '18:00' },
+        evening:   { label: 'Evening',   icon: 'fa-moon',      color: '#6366f1', bg: '#eef2ff', start: '18:00', end: '00:00' },
+        night:     { label: 'Night',     icon: 'fa-star',      color: '#1e293b', bg: '#f1f5f9', start: '00:00', end: '06:00' },
+    };
+
+    /* =============================================================
+       UTILITY FUNCTIONS
+       ============================================================= */
+
+    /** Get Monday of the week containing the given date */
+    function getMonday(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        d.setDate(diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
+    /** Format a date as "Mon DD" */
+    function fmtShort(date) {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    /** Get the day-of-week key for a date offset from Monday */
+    function dayKeyFromOffset(offset) {
+        return DAYS_OF_WEEK[offset];
+    }
+
+    /** Convert "HH:MM" to total minutes */
+    function toMinutes(t) {
+        if (!t) return 0;
+        const [h, m] = t.split(':').map(Number);
+        return (h || 0) * 60 + (m || 0);
+    }
+
+    /** Check if two time ranges overlap */
+    function rangesOverlap(s1, e1, s2, e2) {
+        return toMinutes(s1) < toMinutes(e2) && toMinutes(s2) < toMinutes(e1);
+    }
+
+    /** Generate a unique ID */
+    function uid() {
+        return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+
+    /** Lookup helpers */
+    function findDoctor(id) { return doctors.find(d => d.id === id); }
+    function findDept(id) { return departments.find(d => d.id === id); }
+    function findHospital(id) { return hospitals.find(h => h.id === id); }
+
+    /** Get appointments for a doctor, optionally filtered by day */
+    function getDocAppointments(docId, day) {
+        return appointments.filter(a => a.doctorId === docId && (!day || a.date === day));
+    }
+
+    /** Get schedules for a doctor */
+    function getDocSchedules(docId) {
+        return schedules.filter(s => s.doctorId === docId);
+    }
+
+    /** Get all unique specializations */
+    function allSpecializations() {
+        return [...new Set(doctors.map(d => d.specialization).filter(Boolean))].sort();
+    }
+
+    /** Debounce */
+    function debounce(fn, ms) {
+        let t;
+        return function (...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), ms); };
+    }
+
+    /** Safe innerHTML for avatar fallback */
+    function avatarFallback(name) {
+        const initial = (name || '?').replace(/^Dr\.\s*/, '').charAt(0).toUpperCase();
+        return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="#e8ecf4" width="100" height="100" rx="20"/><text x="50" y="62" text-anchor="middle" fill="#64748b" font-family="sans-serif" font-size="36" font-weight="600">${initial}</text></svg>`)}`;
+    }
+
+    /** Create an element from HTML string */
+    function createElement(html) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html.trim();
+        return tmp.firstElementChild;
+    }
+
+    /* =============================================================
+       TOAST NOTIFICATION SYSTEM
+       ============================================================= */
+
+    /**
+     * Show a toast notification
+     * @param {string} message - Message text
+     * @param {'success'|'error'|'warning'|'info'} type - Toast type
+     * @param {number} duration - Auto-dismiss time in ms
+     */
+    function showToast(message, type = 'info', duration = 4500) {
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'fa-check', error: 'fa-xmark', warning: 'fa-exclamation', info: 'fa-info' };
+
+        const el = document.createElement('div');
+        el.className = `toast-item toast-${type}`;
+        el.innerHTML = `
+            <div class="toast-icon"><i class="fas ${icons[type]}"></i></div>
+            <div style="flex:1; min-width:0;">
+                <div style="color:#1a2332; font-weight:600; line-height:1.4;">${message}</div>
+            </div>
+            <button style="flex-shrink:0; background:none; border:none; cursor:pointer; color:#b0bdd1; padding:4px; margin:-4px;" class="toast-dismiss" aria-label="Dismiss">
+                <i class="fas fa-xmark text-xs"></i>
+            </button>
+        `;
+
+        container.appendChild(el);
+
+        /* Trigger enter animation */
+        requestAnimationFrame(() => { el.classList.add('visible'); });
+
+        /* Dismiss handlers */
+        const dismiss = () => {
+            el.classList.remove('visible');
+            el.classList.add('exiting');
+            setTimeout(() => el.remove(), 400);
+        };
+
+        el.querySelector('.toast-dismiss').addEventListener('click', dismiss);
+        setTimeout(dismiss, duration);
+    }
+
+    /* =============================================================
+       CONFLICT DETECTION
+       ============================================================= */
+
+    /**
+     * Check if assigning a doctor to a time slot conflicts with existing schedules.
+     * @param {string} doctorId
+     * @param {string} day
+     * @param {string} shift
+     * @param {string} startTime - "HH:MM"
+     * @param {string} endTime - "HH:MM"
+     * @param {string|null} excludeId - Schedule ID to exclude (for edits)
+     * @returns {{ conflict: boolean, existing: object|null }}
+     */
+    function checkConflict(doctorId, day, shift, startTime, endTime, excludeId = null) {
+        const sStart = startTime || SHIFT_META[shift].start;
+        const sEnd = endTime || SHIFT_META[shift].end;
+
+        for (const sch of schedules) {
+            if (sch.doctorId !== doctorId || sch.day !== day || sch.id === excludeId) continue;
+            const eStart = sch.startTime || SHIFT_META[sch.shift].start;
+            const eEnd = sch.endTime || SHIFT_META[sch.shift].end;
+            if (rangesOverlap(sStart, sEnd, eStart, eEnd)) {
+                return { conflict: true, existing: sch };
+            }
+        }
+        return { conflict: false, existing: null };
+    }
+
+    /* =============================================================
+       FILTER FUNCTIONS
+       ============================================================= */
+
+    /**
+     * Filter the doctors array based on current state
+     */
+    function filterDoctors() {
+        let result = [...doctors];
+
+        if (AppState.hospitalFilter) {
+            result = result.filter(d => d.hospitalId === AppState.hospitalFilter);
+        }
+        if (AppState.departmentFilter) {
+            result = result.filter(d => d.departmentId === AppState.departmentFilter);
+        }
+        if (AppState.filters.doctor) {
+            result = result.filter(d => d.id === AppState.filters.doctor);
+        }
+        if (AppState.filters.specialization) {
+            result = result.filter(d => d.specialization === AppState.filters.specialization);
+        }
+        if (AppState.filters.availability) {
+            result = result.filter(d => d.status === AppState.filters.availability);
+        }
+        if (AppState.searchQuery) {
+            const q = AppState.searchQuery.toLowerCase();
+            result = result.filter(d => {
+                return d.name.toLowerCase().includes(q) ||
+                       d.specialization.toLowerCase().includes(q) ||
+                       (findDept(d.departmentId)?.name || '').toLowerCase().includes(q) ||
+                       (findHospital(d.hospitalId)?.name || '').toLowerCase().includes(q);
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Filter the schedules array based on current state
+     */
+    function filterSchedules() {
+        let result = [...schedules];
+
+        if (AppState.hospitalFilter) {
+            const ids = doctors.filter(d => d.hospitalId === AppState.hospitalFilter).map(d => d.id);
+            result = result.filter(s => ids.includes(s.doctorId));
+        }
+        if (AppState.departmentFilter) {
+            const ids = doctors.filter(d => d.departmentId === AppState.departmentFilter).map(d => d.id);
+            result = result.filter(s => ids.includes(s.doctorId));
+        }
+        if (AppState.filters.doctor) {
+            result = result.filter(s => s.doctorId === AppState.filters.doctor);
+        }
+        if (AppState.filters.specialization) {
+            const ids = doctors.filter(d => d.specialization === AppState.filters.specialization).map(d => d.id);
+            result = result.filter(s => ids.includes(s.doctorId));
+        }
+        if (AppState.filters.day) {
+            result = result.filter(s => s.day === AppState.filters.day);
+        }
+        if (AppState.filters.shift) {
+            result = result.filter(s => s.shift === AppState.filters.shift);
+        }
+        if (AppState.filters.availability) {
+            const ids = doctors.filter(d => d.status === AppState.filters.availability).map(d => d.id);
+            result = result.filter(s => ids.includes(s.doctorId));
+        }
+        if (AppState.searchQuery) {
+            const q = AppState.searchQuery.toLowerCase();
+            result = result.filter(s => {
+                const doc = findDoctor(s.doctorId);
+                if (!doc) return false;
+                return doc.name.toLowerCase().includes(q) ||
+                       doc.specialization.toLowerCase().includes(q) ||
+                       (findDept(doc.departmentId)?.name || '').toLowerCase().includes(q);
+            });
+        }
+        return result;
+    }
+
+    /**
+     * Get pool doctors with optional pool-specific search
+     */
+    function getPoolDoctors() {
+        let result = filterDoctors();
+        if (AppState.poolSearchQuery) {
+            const q = AppState.poolSearchQuery.toLowerCase();
+            result = result.filter(d =>
+                d.name.toLowerCase().includes(q) ||
+                d.specialization.toLowerCase().includes(q)
+            );
+        }
+        return result;
+    }
+
+    /* =============================================================
+       RENDER: ANALYTICS BAR
+       ============================================================= */
+
+    function renderAnalytics() {
+        const container = document.getElementById('analyticsContainer');
+        const filteredDocs = filterDoctors();
+        const scheduledIds = new Set(schedules.map(s => s.doctorId));
+
+        const available = filteredDocs.filter(d => d.status === 'available' && !scheduledIds.has(d.id)).length;
+        const scheduled = filteredDocs.filter(d => scheduledIds.has(d.id)).length;
+
+        const todayIdx = (new Date().getDay() + 6) % 7;
+        const todayKey = DAYS_OF_WEEK[todayIdx];
+        const todayApts = appointments.filter(a => a.date === todayKey && a.status !== 'cancelled').length;
+
+        /* Count actual conflicts across all schedules */
+        let conflicts = 0;
+        for (let i = 0; i < schedules.length; i++) {
+            const s = schedules[i];
+            const r = checkConflict(s.doctorId, s.day, s.shift, s.startTime, s.endTime, s.id);
+            if (r.conflict) conflicts++;
+        }
+
+        const cards = [
+            { label: 'Total Doctors',       value: filteredDocs.length, icon: 'fa-user-doctor',          color: '#3366ff', bg: '#eef4ff' },
+            { label: 'Available',            value: available,           icon: 'fa-circle-check',         color: '#059669', bg: '#ecfdf5' },
+            { label: 'Scheduled',            value: scheduled,           icon: 'fa-calendar-check',       color: '#7c3aed', bg: '#f5f3ff' },
+            { label: "Today's Appointments", value: todayApts,           icon: 'fa-clock',                color: '#d97706', bg: '#fffbeb' },
+            { label: 'Conflicts',            value: conflicts,           icon: 'fa-triangle-exclamation', color: conflicts ? '#dc2626' : '#94a3b8', bg: conflicts ? '#fef2f2' : '#f8fafc' },
+        ];
+
+        container.innerHTML = cards.map((c, i) => `
+            <div class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-slate-100 min-w-[170px] flex-shrink-0 interactive-card animate-slide-up" style="animation-delay:${i * 50}ms;">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:${c.bg};">
+                    <i class="fas ${c.icon} text-sm" style="color:${c.color};"></i>
+                </div>
+                <div class="min-w-0">
+                    <div class="text-lg font-extrabold text-slate-900 leading-tight">${c.value}</div>
+                    <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider truncate">${c.label}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /* =============================================================
+       RENDER: DOCTOR POOL
+       ============================================================= */
+
+    function renderDoctors() {
+        const poolDocs = getPoolDoctors();
+        const countLabel = document.getElementById('poolCountLabel');
+        countLabel.textContent = `${poolDocs.length} doctor${poolDocs.length !== 1 ? 's' : ''}`;
+
+        const html = poolDocs.length === 0
+            ? renderEmptyState('fa-user-doctor', 'No doctors match your filters', 'Try adjusting the search or filter criteria')
+            : poolDocs.map((doc, i) => buildPoolCard(doc, i)).join('');
+
+        document.getElementById('poolList').innerHTML = html;
+        const mobileList = document.getElementById('mobilePoolList');
+        if (mobileList) mobileList.innerHTML = html;
+
+        bindPoolDragEvents();
+    }
+
+    /** Build a doctor card for the pool */
+    function buildPoolCard(doc, idx) {
+        const dept = findDept(doc.departmentId);
+        const hosp = findHospital(doc.hospitalId);
+        const aptCount = appointments.filter(a => a.doctorId === doc.id && a.status !== 'cancelled').length;
+        const canDrag = doc.status !== 'on-leave' && doc.status !== 'off-duty';
+        const delay = Math.min(idx * 30, 300);
+
+        return `
+        <div class="draggable-card interactive-card bg-white border border-slate-100 rounded-xl p-3 animate-fade-in ${canDrag ? '' : 'opacity-50 pointer-events-none'}"
+             style="animation-delay:${delay}ms;"
+             data-doctor-id="${doc.id}"
+             ${canDrag ? 'draggable="true"' : ''}>
+            <div class="flex items-start gap-2.5">
+                <img src="${doc.photo}" alt="" class="w-9 h-9 rounded-lg object-cover flex-shrink-0 bg-slate-100"
+                     onerror="this.onerror=null; this.src='${avatarFallback(doc.name)}';">
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-bold text-slate-900 truncate leading-tight">${doc.name}</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5 truncate">${dept ? dept.name : '—'}</div>
+                    <div class="flex items-center gap-1.5 mt-1.5">
+                        <span class="status-badge status-${doc.status}"><span class="dot"></span>${doc.status.replace('-', ' ')}</span>
+                        <span class="text-[10px] text-slate-300">${aptCount} apt</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400 leading-tight">
+                <i class="fas fa-hospital text-[8px] flex-shrink-0"></i>
+                <span class="truncate">${hosp ? hosp.name : '—'}</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400 leading-tight">
+                <i class="fas fa-award text-[8px] flex-shrink-0"></i>
+                <span>${doc.experience}yr &middot; ${doc.specialization}</span>
+            </div>
+            <div class="flex items-center gap-1.5 mt-2.5">
+                <button class="js-pool-assign flex-1 h-7 text-[11px] font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.97] transition-all flex items-center justify-center gap-1"
+                        data-doctor-id="${doc.id}" ${!canDrag ? 'disabled' : ''}>
+                    <i class="fas fa-plus text-[8px]"></i> Assign
+                </button>
+                <button class="js-pool-view-apt h-7 w-7 flex items-center justify-center rounded-lg border border-slate-150 text-slate-400 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                        data-doctor-id="${doc.id}" title="View appointments">
+                    <i class="fas fa-calendar-day text-[10px]"></i>
+                </button>
+            </div>
+        </div>`;
+    }
+
+    /** Empty state HTML */
+    function renderEmptyState(icon, title, subtitle) {
+        return `
+        <div class="flex flex-col items-center justify-center py-10 text-center px-4">
+            <div class="empty-state-icon bg-slate-50">
+                <i class="fas ${icon} text-slate-300 text-lg"></i>
+            </div>
+            <p class="text-xs font-semibold text-slate-500">${title}</p>
+            <p class="text-[11px] text-slate-400 mt-1 max-w-[200px]">${subtitle}</p>
+        </div>`;
+    }
+
+    /* =============================================================
+       RENDER: KANBAN BOARD
+       ============================================================= */
+
+    function renderBoard() {
+        const container = document.getElementById('kanbanColumns');
+        const filtered = filterSchedules();
+        const weekStart = AppState.weekStart;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let html = '';
+
+        for (let offset = 0; offset < 7; offset++) {
+            const date = new Date(weekStart);
+            date.setDate(date.getDate() + offset);
+            const dayKey = DAYS_OF_WEEK[offset];
+            const isToday = date.getTime() === today.getTime();
+            const isPast = date < today;
+
+            html += `<div class="flex-shrink-0" style="width:250px;">`;
+
+            /* Day column header */
+            html += `
+            <div class="day-header glass-subtle rounded-xl p-3 mb-2.5 ${isToday ? 'day-column-today' : ''}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-[13px] font-bold ${isToday ? 'text-brand-600' : 'text-slate-800'}">${DAY_LABELS[dayKey]}</div>
+                        <div class="text-[11px] ${isToday ? 'text-brand-500 font-semibold' : 'text-slate-400'} mt-0.5">${fmtShort(date)}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${isToday ? '<span class="text-[9px] font-bold uppercase tracking-widest text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">Today</span>' : ''}
+                        <span class="text-[11px] font-bold text-slate-300">${filtered.filter(s => s.day === dayKey).length}</span>
+                    </div>
+                </div>
+            </div>`;
+
+            /* Shift slots */
+            html += `<div class="space-y-2 ${isPast ? 'opacity-60' : ''}">`;
+
+            SHIFTS.forEach(shift => {
+                const meta = SHIFT_META[shift];
+                const slotSchedules = filtered.filter(s => s.day === dayKey && s.shift === shift);
+                const isConflictHL = AppState.conflictHighlight &&
+                    AppState.conflictHighlight.day === dayKey &&
+                    AppState.conflictHighlight.shift === shift;
+
+                html += `
+                <div class="rounded-xl border border-slate-100 bg-white overflow-hidden">
+                    <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-50 ${isConflictHL ? 'bg-danger-50' : ''}">
+                        <div class="flex items-center gap-1.5">
+                            <i class="fas ${meta.icon} text-[10px]" style="color:${meta.color};"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">${meta.label}</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-slate-300">${meta.start}–${meta.end}</span>
+                    </div>
+                    <div class="drop-zone p-1.5 space-y-1.5 min-h-[60px] transition-all duration-150 border-2 border-transparent rounded-b-xl ${isConflictHL ? 'drop-target-invalid' : ''}"
+                         data-day="${dayKey}" data-shift="${shift}">`;
+
+                if (slotSchedules.length === 0) {
+                    html += `
+                        <div class="flex items-center justify-center py-5 text-slate-200">
+                            <div class="text-center">
+                                <i class="fas fa-grip-vertical text-sm mb-1 opacity-40"></i>
+                                <p class="text-[9px] font-medium">Drop here</p>
+                            </div>
+                        </div>`;
+                } else {
+                    slotSchedules.forEach((sch, si) => {
+                        html += buildBoardCard(sch, si);
+                    });
+                }
+
+                html += `</div></div>`;
+            });
+
+            html += `</div></div>`;
+        }
+
+        container.innerHTML = html;
+        bindBoardDragEvents();
+    }
+
+    /** Build a doctor card for the kanban board */
+    function buildBoardCard(sch, idx) {
+        const doc = findDoctor(sch.doctorId);
+        if (!doc) return '';
+        const dept = findDept(doc.departmentId);
+        const hosp = findHospital(doc.hospitalId);
+        const meta = SHIFT_META[sch.shift];
+        const start = sch.startTime || meta.start;
+        const end = sch.endTime || meta.end;
+
+        const { conflict } = checkConflict(doc.id, sch.day, sch.shift, start, end, sch.id);
+        const borderClass = conflict ? 'border-danger-200 bg-danger-50/30' : 'border-slate-100';
+        const delay = Math.min(idx * 40, 200);
+
+        return `
+        <div class="draggable-card interactive-card bg-white border ${borderClass} rounded-lg p-2 animate-fade-in ${conflict ? 'animate-conflict' : ''}"
+             style="animation-delay:${delay}ms;"
+             data-doctor-id="${doc.id}"
+             data-schedule-id="${sch.id}"
+             draggable="true">
+            <div class="flex items-start gap-2">
+                <img src="${doc.photo}" alt="" class="w-7 h-7 rounded-md object-cover flex-shrink-0 bg-slate-100"
+                     onerror="this.onerror=null; this.src='${avatarFallback(doc.name)}';">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-[11px] font-bold text-slate-900 truncate">${doc.name}</span>
+                        ${conflict ? '<span class="status-badge status-conflict" style="padding:1px 6px; font-size:9px;"><span class="dot"></span>Conflict</span>' : ''}
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-0.5 truncate">${dept ? dept.name : ''}</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2.5 mt-1.5 text-[9px] text-slate-400">
+                <span class="flex items-center gap-0.5"><i class="fas fa-hospital text-[7px]"></i> ${hosp ? hosp.code : ''}</span>
+                <span class="flex items-center gap-0.5"><i class="fas fa-door-open text-[7px]"></i> ${sch.room || doc.room}</span>
+                <span class="flex items-center gap-0.5 font-mono"><i class="fas fa-clock text-[7px]"></i> ${start}–${end}</span>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+                <span class="text-[9px] text-slate-300 flex items-center gap-0.5">
+                    <i class="fas fa-users text-[7px]"></i> ${sch.patientCount || 0} pts
+                </span>
+                <div class="flex items-center gap-0.5">
+                    <button class="js-board-view-apt w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                            data-doctor-id="${doc.id}" data-day="${sch.day}" title="View appointments">
+                        <i class="fas fa-calendar-day text-[9px]"></i>
+                    </button>
+                    <button class="js-board-edit w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                            data-schedule-id="${sch.id}" title="Edit schedule">
+                        <i class="fas fa-pen text-[8px]"></i>
+                    </button>
+                    <button class="js-board-delete w-5 h-5 flex items-center justify-center rounded text-slate-300 hover:text-danger-600 hover:bg-danger-50 transition-colors"
+                            data-schedule-id="${sch.id}" title="Delete schedule">
+                        <i class="fas fa-trash-can text-[8px]"></i>
+                    </button>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    /* =============================================================
+       DRAG AND DROP SYSTEM
+       ============================================================= */
+
+    function bindPoolDragEvents() {
+        document.querySelectorAll('#poolList .draggable-card[draggable], #mobilePoolList .draggable-card[draggable]').forEach(el => {
+            el.addEventListener('dragstart', onDragStart);
+            el.addEventListener('dragend', onDragEnd);
+        });
+    }
+
+    function bindBoardDragEvents() {
+        /* Board cards are also draggable (to move between slots) */
+        document.querySelectorAll('#kanbanColumns .draggable-card[draggable]').forEach(el => {
+            el.addEventListener('dragstart', onDragStart);
+            el.addEventListener('dragend', onDragEnd);
+        });
+
+        /* Drop zones */
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', onDragOver);
+            zone.addEventListener('dragenter', onDragEnter);
+            zone.addEventListener('dragleave', onDragLeave);
+            zone.addEventListener('drop', onDrop);
+        });
+    }
+
+    function onDragStart(e) {
+        const el = e.currentTarget;
+        const doctorId = el.dataset.doctorId;
+        const scheduleId = el.dataset.scheduleId || null;
+
+        AppState.dragState.active = true;
+        AppState.dragState.doctorId = doctorId;
+        AppState.dragState.sourceScheduleId = scheduleId;
+        AppState.dragState.sourceEl = el;
+
+        el.classList.add('drag-source');
+
+        /* Set drag data */
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/doctor-id', doctorId);
+        e.dataTransfer.setData('application/schedule-id', scheduleId || '');
+
+        /* Create custom ghost */
+        const ghost = el.cloneNode(true);
+        ghost.className = 'drag-ghost';
+        ghost.style.width = el.offsetWidth + 'px';
+        ghost.style.position = 'fixed';
+        ghost.style.top = '-1000px';
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost, 20, 20);
+        AppState.dragState.ghostEl = ghost;
+
+        /* Clean up ghost after frame */
+        requestAnimationFrame(() => {
+            if (AppState.dragState.ghostEl) {
+                AppState.dragState.ghostEl.remove();
+                AppState.dragState.ghostEl = null;
+            }
+        });
+    }
+
+    function onDragEnd(e) {
+        const el = e.currentTarget;
+        el.classList.remove('drag-source');
+
+        /* Clear all drop zone styles */
+        document.querySelectorAll('.drop-zone').forEach(z => {
+            z.classList.remove('drop-target-valid', 'drop-target-invalid');
+        });
+
+        AppState.dragState = { active: false, doctorId: null, sourceScheduleId: null, ghostEl: null, sourceEl: null };
+    }
+
+    function onDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function onDragEnter(e) {
+        e.preventDefault();
+        const zone = e.currentTarget;
+        if (!AppState.dragState.doctorId) return;
+
+        const { conflict } = checkConflict(
+            AppState.dragState.doctorId,
+            zone.dataset.day,
+            zone.dataset.shift,
+            SHIFT_META[zone.dataset.shift].start,
+            SHIFT_META[zone.dataset.shift].end,
+            AppState.dragState.sourceScheduleId || undefined
+        );
+
+        zone.classList.remove('drop-target-valid', 'drop-target-invalid');
+        zone.classList.add(conflict ? 'drop-target-invalid' : 'drop-target-valid');
+    }
+
+    function onDragLeave(e) {
+        const zone = e.currentTarget;
+        if (!zone.contains(e.relatedTarget)) {
+            zone.classList.remove('drop-target-valid', 'drop-target-invalid');
+        }
+    }
+
+    function onDrop(e) {
+        e.preventDefault();
+        const zone = e.currentTarget;
+        zone.classList.remove('drop-target-valid', 'drop-target-invalid');
+
+        const doctorId = e.dataTransfer.getData('application/doctor-id') || AppState.dragState.doctorId;
+        const sourceSchId = e.dataTransfer.getData('application/schedule-id') || AppState.dragState.sourceScheduleId;
+        if (!doctorId) return;
+
+        const day = zone.dataset.day;
+        const shift = zone.dataset.shift;
+        const meta = SHIFT_META[shift];
+
+        /* If dragging from board to board (move) */
+        if (sourceSchId) {
+            const existingSch = schedules.find(s => s.id === sourceSchId);
+            if (existingSch) {
+                /* Check conflict excluding source */
+                const { conflict, existing: conflictSch } = checkConflict(doctorId, day, shift, meta.start, meta.end, sourceSchId);
+                if (conflict) {
+                    const doc = findDoctor(doctorId);
+                    const cMeta = SHIFT_META[conflictSch.shift];
+                    showToast(
+                        `Cannot move ${doc ? doc.name : 'doctor'}: Conflicts with existing ${DAY_LABELS[day]} ${cMeta.label} schedule (${conflictSch.startTime || cMeta.start}–${conflictSch.endTime || cMeta.end}).`,
+                        'error', 6000
+                    );
+                    highlightConflict(day, shift);
+                    return;
+                }
+                existingSch.day = day;
+                existingSch.shift = shift;
+                existingSch.startTime = meta.start;
+                existingSch.endTime = meta.end;
+                const doc = findDoctor(doctorId);
+                showToast(`Moved ${doc ? doc.name : 'doctor'} to ${DAY_LABELS[day]} ${meta.label}`, 'success');
+                renderAll();
+                return;
+            }
+        }
+
+        /* Check conflict for new assignment */
+        const { conflict, existing: conflictSch } = checkConflict(doctorId, day, shift, meta.start, meta.end);
+        if (conflict) {
+            const doc = findDoctor(doctorId);
+            const cMeta = SHIFT_META[conflictSch.shift];
+            showToast(
+                `Schedule conflict: ${doc ? doc.name : 'Doctor'} is already assigned to ${DAY_LABELS[day]} ${cMeta.label} (${conflictSch.startTime || cMeta.start}–${conflictSch.endTime || cMeta.end}). Assignment prevented.`,
+                'error', 6000
+            );
+            highlightConflict(day, shift);
+            return;
+        }
+
+        /* Create schedule */
+        const doc = findDoctor(doctorId);
+        schedules.push({
+            id: uid(),
+            doctorId: doctorId,
+            day: day,
+            shift: shift,
+            startTime: meta.start,
+            endTime: meta.end,
+            room: doc ? doc.room : '',
+            patientCount: 0,
+        });
+
+        showToast(`${doc ? doc.name : 'Doctor'} assigned to ${DAY_LABELS[day]} ${meta.label}`, 'success');
+        renderAll();
+    }
+
+    /** Temporarily highlight a conflicting slot */
+    function highlightConflict(day, shift) {
+        AppState.conflictHighlight = { day, shift };
+        renderBoard();
+        setTimeout(() => {
+            AppState.conflictHighlight = null;
+            renderBoard();
+        }, 3000);
+    }
+
+    /* =============================================================
+       MODAL: ASSIGN SCHEDULE
+       ============================================================= */
+
+    function assignDoctor(doctorId) {
+        const doc = findDoctor(doctorId);
+        if (!doc) return;
+        const dept = findDept(doc.departmentId);
+        const defaultShift = SHIFT_META.morning;
+
+        const dialog = document.getElementById('modalDialog');
+        dialog.innerHTML = `
+        <div class="px-6 py-5 border-b border-slate-100 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Assign Schedule</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Configure shift for ${doc.name}</p>
+                </div>
+                <button class="js-modal-close w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" aria-label="Close">
+                    <i class="fas fa-xmark text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-body px-6 py-5 space-y-4">
+            <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <img src="${doc.photo}" alt="" class="w-11 h-11 rounded-xl object-cover bg-slate-100"
+                     onerror="this.onerror=null; this.src='${avatarFallback(doc.name)}';">
+                <div>
+                    <div class="text-sm font-bold text-slate-900">${doc.name}</div>
+                    <div class="text-xs text-slate-400">${dept ? dept.name : ''} &middot; ${doc.specialization}</div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Day</label>
+                <select id="modalDay" class="form-select form-input w-full h-10 pl-3 text-sm bg-white border border-slate-200 rounded-xl">
+                    ${DAYS_OF_WEEK.map(d => `<option value="${d}">${DAY_LABELS[d]}</option>`).join('')}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Shift</label>
+                <select id="modalShift" class="form-select form-input w-full h-10 pl-3 text-sm bg-white border border-slate-200 rounded-xl">
+                    ${SHIFTS.map(s => `<option value="${s}">${SHIFT_META[s].label} (${SHIFT_META[s].start} – ${SHIFT_META[s].end})</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Start Time</label>
+                    <input type="time" id="modalStart" value="${defaultShift.start}" class="form-input w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">End Time</label>
+                    <input type="time" id="modalEnd" value="${defaultShift.end}" class="form-input w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-xl">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Room Number</label>
+                <input type="text" id="modalRoom" value="${doc.room}" class="form-input w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-xl">
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-100 flex items-center gap-3 flex-shrink-0">
+            <button id="modalSaveBtn" class="flex-1 h-10 text-sm font-semibold rounded-xl bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all">
+                Assign Schedule
+            </button>
+            <button class="js-modal-close h-10 px-5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                Cancel
+            </button>
+        </div>`;
+
+        /* Shift change updates time defaults */
+        document.getElementById('modalShift').addEventListener('change', function () {
+            const m = SHIFT_META[this.value];
+            document.getElementById('modalStart').value = m.start;
+            document.getElementById('modalEnd').value = m.end;
+        });
+
+        /* Save handler */
+        document.getElementById('modalSaveBtn').addEventListener('click', function () {
+            saveSchedule(doctorId, null);
+        });
+
+        openModal();
+    }
+
+    /* =============================================================
+       MODAL: EDIT SCHEDULE
+       ============================================================= */
+
+    function editSchedule(scheduleId) {
+        const sch = schedules.find(s => s.id === scheduleId);
+        if (!sch) return;
+        const doc = findDoctor(sch.doctorId);
+        if (!doc) return;
+        const dept = findDept(doc.departmentId);
+
+        const dialog = document.getElementById('modalDialog');
+        dialog.innerHTML = `
+        <div class="px-6 py-5 border-b border-slate-100 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Edit Schedule</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Modify shift for ${doc.name}</p>
+                </div>
+                <button class="js-modal-close w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" aria-label="Close">
+                    <i class="fas fa-xmark text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-body px-6 py-5 space-y-4">
+            <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                <img src="${doc.photo}" alt="" class="w-11 h-11 rounded-xl object-cover bg-slate-100"
+                     onerror="this.onerror=null; this.src='${avatarFallback(doc.name)}';">
+                <div>
+                    <div class="text-sm font-bold text-slate-900">${doc.name}</div>
+                    <div class="text-xs text-slate-400">${dept ? dept.name : ''}</div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Day</label>
+                <select id="modalDay" class="form-select form-input w-full h-10 pl-3 text-sm bg-white border border-slate-200 rounded-xl">
+                    ${DAYS_OF_WEEK.map(d => `<option value="${d}" ${sch.day === d ? 'selected' : ''}>${DAY_LABELS[d]}</option>`).join('')}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Shift</label>
+                <select id="modalShift" class="form-select form-input w-full h-10 pl-3 text-sm bg-white border border-slate-200 rounded-xl">
+                    ${SHIFTS.map(s => `<option value="${s}" ${sch.shift === s ? 'selected' : ''}>${SHIFT_META[s].label} (${SHIFT_META[s].start} – ${SHIFT_META[s].end})</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Start Time</label>
+                    <input type="time" id="modalStart" value="${sch.startTime || SHIFT_META[sch.shift].start}" class="form-input w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">End Time</label>
+                    <input type="time" id="modalEnd" value="${sch.endTime || SHIFT_META[sch.shift].end}" class="form-input w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-xl">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">Room Number</label>
+                <input type="text" id="modalRoom" value="${sch.room || doc.room}" class="form-input w-full h-10 px-3 text-sm bg-white border border-slate-200 rounded-xl">
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-100 flex items-center gap-3 flex-shrink-0">
+            <button id="modalSaveBtn" class="flex-1 h-10 text-sm font-semibold rounded-xl bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all">
+                Save Changes
+            </button>
+            <button class="js-modal-close h-10 px-5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                Cancel
+            </button>
+        </div>`;
+
+        document.getElementById('modalShift').addEventListener('change', function () {
+            const m = SHIFT_META[this.value];
+            document.getElementById('modalStart').value = m.start;
+            document.getElementById('modalEnd').value = m.end;
+        });
+
+        document.getElementById('modalSaveBtn').addEventListener('click', function () {
+            saveSchedule(doc.id, scheduleId);
+        });
+
+        openModal();
+    }
+
+    /* =============================================================
+       MODAL: DELETE SCHEDULE
+       ============================================================= */
+
+    function deleteSchedule(scheduleId) {
+        const sch = schedules.find(s => s.id === scheduleId);
+        if (!sch) return;
+        const doc = findDoctor(sch.doctorId);
+        const meta = SHIFT_META[sch.shift];
+
+        const dialog = document.getElementById('modalDialog');
+        dialog.innerHTML = `
+        <div class="px-6 py-5 border-b border-slate-100 flex-shrink-0">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900">Delete Schedule</h3>
+                <button class="js-modal-close w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors" aria-label="Close">
+                    <i class="fas fa-xmark text-sm"></i>
+                </button>
+            </div>
+        </div>
+        <div class="modal-body px-6 py-5">
+            <div class="flex items-center gap-3 p-4 bg-danger-50 border border-danger-100 rounded-xl mb-5">
+                <div class="w-10 h-10 rounded-full bg-danger-100 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-triangle-exclamation text-danger-600"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-danger-800">This cannot be undone</p>
+                    <p class="text-xs text-danger-600 mt-0.5">The schedule will be permanently removed.</p>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-xl">
+                <div class="text-sm font-bold text-slate-900">${doc ? doc.name : 'Unknown Doctor'}</div>
+                <div class="text-xs text-slate-500 mt-1.5 space-y-1">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-calendar text-[9px] text-slate-300 w-3"></i>
+                        <span>${DAY_LABELS[sch.day]} &middot; ${meta.label}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-clock text-[9px] text-slate-300 w-3"></i>
+                        <span class="font-mono">${sch.startTime || meta.start} – ${sch.endTime || meta.end}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-door-open text-[9px] text-slate-300 w-3"></i>
+                        <span>Room ${sch.room || 'N/A'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-100 flex items-center gap-3 flex-shrink-0">
+            <button id="modalDeleteBtn" class="flex-1 h-10 text-sm font-semibold rounded-xl bg-danger-600 text-white hover:bg-danger-700 active:scale-[0.98] transition-all">
+                Delete Schedule
+            </button>
+            <button class="js-modal-close h-10 px-5 text-sm font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                Cancel
+            </button>
+        </div>`;
+
+        document.getElementById('modalDeleteBtn').addEventListener('click', function () {
+            const idx = schedules.findIndex(s => s.id === scheduleId);
+            if (idx !== -1) {
+                schedules.splice(idx, 1);
+                showToast(`Schedule removed for ${doc ? doc.name : 'doctor'}`, 'success');
+                closeModal();
+                renderAll();
+            }
+        });
+
+        openModal();
+    }
+
+    /* =============================================================
+       SAVE SCHEDULE (Create or Update)
+       ============================================================= */
+
+    function saveSchedule(doctorId, scheduleId) {
+        const day = document.getElementById('modalDay').value;
+        const shift = document.getElementById('modalShift').value;
+        const startTime = document.getElementById('modalStart').value;
+        const endTime = document.getElementById('modalEnd').value;
+        const room = document.getElementById('modalRoom').value.trim();
+
+        /* Validation */
+        if (!day || !shift || !startTime || !endTime) {
+            showToast('Please fill in all required fields.', 'warning');
+            return;
+        }
+        if (toMinutes(endTime) <= toMinutes(startTime)) {
+            showToast('End time must be after start time.', 'warning');
+            return;
+        }
+
+        /* Conflict detection */
+        const { conflict, existing: conflictSch } = checkConflict(doctorId, day, shift, startTime, endTime, scheduleId);
+        if (conflict) {
+            const doc = findDoctor(doctorId);
+            const cm = SHIFT_META[conflictSch.shift];
+            showToast(
+                `Conflict: ${doc ? doc.name : 'Doctor'} already has a ${DAY_LABELS[day]} ${cm.label} schedule (${conflictSch.startTime || cm.start}–${conflictSch.endTime || cm.end}).`,
+                'error', 6000
+            );
+            return;
+        }
+
+        if (scheduleId) {
+            /* Update existing */
+            const sch = schedules.find(s => s.id === scheduleId);
+            if (sch) {
+                sch.day = day;
+                sch.shift = shift;
+                sch.startTime = startTime;
+                sch.endTime = endTime;
+                sch.room = room;
+                showToast('Schedule updated successfully.', 'success');
+            }
+        } else {
+            /* Create new */
+            schedules.push({
+                id: uid(),
+                doctorId: doctorId,
+                day: day,
+                shift: shift,
+                startTime: startTime,
+                endTime: endTime,
+                room: room,
+                patientCount: 0,
+            });
+            const doc = findDoctor(doctorId);
+            showToast(`${doc ? doc.name : 'Doctor'} assigned to ${DAY_LABELS[day]} ${SHIFT_META[shift].label}.`, 'success');
+        }
+
+        closeModal();
+        renderAll();
+    }
+
+    /* =============================================================
+       APPOINTMENT DRAWER
+       ============================================================= */
+
+    function openAppointmentDrawer(doctorId, day) {
+        const doc = findDoctor(doctorId);
+        if (!doc) return;
+
+        const dept = findDept(doc.departmentId);
+        const hosp = findHospital(doc.hospitalId);
+        const docSchedules = getDocSchedules(doctorId);
+        const dayApts = day ? getDocAppointments(doctorId, day) : getDocAppointments(doctorId).filter(a => a.status !== 'cancelled');
+        const allApts = getDocAppointments(doctorId);
+
+        document.getElementById('drawerTitle').textContent = day ? `${DAY_LABELS[day]} Appointments` : 'All Appointments';
+        document.getElementById('drawerSubtitle').textContent = doc.name;
+
+        const statusStyle = {
+            confirmed: { bg: '#ecfdf5', color: '#047857' },
+            pending:   { bg: '#fffbeb', color: '#92400e' },
+            cancelled: { bg: '#f1f4f9', color: '#4b5a72' },
+        };
+
+        const paymentStyle = {
+            paid:     { bg: '#ecfdf5', color: '#047857' },
+            unpaid:   { bg: '#fef2f2', color: '#991b1b' },
+            refunded: { bg: '#f1f4f9', color: '#4b5a72' },
+        };
+
+        let bodyHTML = '';
+
+        /* Doctor info card */
+        bodyHTML += `
+        <div class="p-4 m-4 mb-0 bg-slate-50 rounded-xl">
+            <div class="flex items-center gap-3">
+                <img src="${doc.photo}" alt="" class="w-12 h-12 rounded-xl object-cover bg-slate-100"
+                     onerror="this.onerror=null; this.src='${avatarFallback(doc.name)}';">
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-bold text-slate-900">${doc.name}</div>
+                    <div class="text-xs text-slate-400 mt-0.5">${dept ? dept.name : ''} &middot; ${doc.specialization}</div>
+                    <div class="text-[11px] text-slate-300 mt-1">${hosp ? hosp.name : ''} &middot; Room ${doc.room}</div>
+                </div>
+                <span class="status-badge status-${doc.status}"><span class="dot"></span>${doc.status.replace('-', ' ')}</span>
+            </div>
+        </div>`;
+
+        /* Schedules section */
+        bodyHTML += `
+        <div class="px-4 pt-5 pb-2">
+            <h4 class="text-[11px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+                <i class="fas fa-calendar-alt text-brand-500 text-[10px]"></i> Weekly Schedule
+            </h4>
+            ${docSchedules.length === 0
+                ? '<p class="text-xs text-slate-400 text-center py-4">No schedules assigned</p>'
+                : `<div class="space-y-2">${docSchedules.map(sch => {
+                    const sm = SHIFT_META[sch.shift];
+                    return `
+                    <div class="flex items-center gap-3 p-2.5 bg-white border border-slate-100 rounded-lg">
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:${sm.bg};">
+                            <i class="fas ${sm.icon} text-[10px]" style="color:${sm.color};"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[11px] font-semibold text-slate-800">${DAY_LABELS[sch.day]} &middot; ${sm.label}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${sch.startTime || sm.start}–${sch.endTime || sm.end} &middot; Rm ${sch.room || '—'}</div>
+                        </div>
+                    </div>`;
+                }).join('')}</div>`
+            }
+        </div>`;
+
+        /* Appointments section */
+        bodyHTML += `
+        <div class="px-4 pt-4 pb-2">
+            <div class="flex items-center justify-between mb-3">
+                <h4 class="text-[11px] font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fas fa-clipboard-list text-brand-500 text-[10px]"></i>
+                    ${day ? DAY_LABELS[day] : 'All'} Appointments
+                </h4>
+                <span class="text-[10px] font-bold text-slate-300">${dayApts.length}</span>
+            </div>
+
+            ${dayApts.length === 0
+                ? `<div class="text-center py-8">
+                       <div class="empty-state-icon bg-slate-50">
+                           <i class="fas fa-clipboard text-slate-200 text-base"></i>
+                       </div>
+                       <p class="text-xs text-slate-400 font-medium">No appointments</p>
+                   </div>`
+                : `<div class="space-y-2">${dayApts.map(apt => {
+                    const ss = statusStyle[apt.status] || statusStyle.pending;
+                    const ps = paymentStyle[apt.payment] || paymentStyle.unpaid;
+                    return `
+                    <div class="p-3 bg-white border border-slate-100 rounded-lg interactive-card">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="text-[12px] font-semibold text-slate-900">${apt.patientName}</div>
+                                <div class="text-[10px] text-slate-400 font-mono mt-0.5">
+                                    <i class="fas fa-clock text-[8px] mr-0.5"></i>${apt.time}
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                                <span class="status-badge text-[9px]" style="background:${ss.bg}; color:${ss.color}; padding:2px 7px;">${apt.status}</span>
+                                <span class="text-[9px] font-semibold" style="color:${ps.color};">${apt.payment}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 mt-2 text-[10px] text-slate-400">
+                            <span><i class="fas fa-globe text-[8px] mr-0.5"></i>${apt.source}</span>
+                            ${apt.notes ? `<span class="truncate"><i class="fas fa-note-sticky text-[8px] mr-0.5"></i>${apt.notes}</span>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}</div>`
+            }
+        </div>`;
+
+        /* Summary */
+        if (allApts.length > 0) {
+            const confirmed = allApts.filter(a => a.status === 'confirmed').length;
+            const pending = allApts.filter(a => a.status === 'pending').length;
+            const paid = allApts.filter(a => a.payment === 'paid').length;
+
+            bodyHTML += `
+            <div class="px-4 pt-4 pb-6">
+                <div class="border-t border-slate-100 pt-4">
+                    <h4 class="text-[11px] font-bold text-slate-900 uppercase tracking-wider mb-3">Summary</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="text-center p-2.5 bg-success-50 rounded-lg">
+                            <div class="text-lg font-extrabold text-success-700">${confirmed}</div>
+                            <div class="text-[9px] font-semibold text-success-600 uppercase tracking-wider">Confirmed</div>
+                        </div>
+                        <div class="text-center p-2.5 bg-warning-50 rounded-lg">
+                            <div class="text-lg font-extrabold text-warning-700">${pending}</div>
+                            <div class="text-[9px] font-semibold text-warning-600 uppercase tracking-wider">Pending</div>
+                        </div>
+                        <div class="text-center p-2.5 bg-slate-50 rounded-lg">
+                            <div class="text-lg font-extrabold text-slate-600">${paid}</div>
+                            <div class="text-[9px] font-semibold text-slate-400 uppercase tracking-wider">Paid</div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        document.getElementById('drawerBody').innerHTML = bodyHTML;
+        openDrawer();
+    }
+
+    /* =============================================================
+       MODAL & DRAWER OPEN/CLOSE
+       ============================================================= */
+
+    function openModal() {
+        document.getElementById('modalBackdrop').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('modalBackdrop').classList.remove('active');
+    }
+
+    function openDrawer() {
+        document.getElementById('drawerBackdrop').classList.add('active');
+        document.getElementById('drawerPanel').classList.add('active');
+    }
+
+    function closeDrawer() {
+        document.getElementById('drawerPanel').classList.remove('active');
+        document.getElementById('drawerBackdrop').classList.remove('active');
+    }
+
+    function closeMobilePool() {
+        const slide = document.getElementById('mobilePoolSlide');
+        slide.style.transform = 'translateX(-100%)';
+        setTimeout(() => {
+            document.getElementById('mobilePoolOverlay').classList.add('hidden');
+        }, 300);
+    }
+
+    /* =============================================================
+       POPULATE SELECT DROPDOWNS
+       ============================================================= */
+
+    function populateSelectors() {
+        /* Hospital selector */
+        const hSel = document.getElementById('headerHospital');
+        hospitals.forEach(h => {
+            const opt = document.createElement('option');
+            opt.value = h.id;
+            opt.textContent = h.name;
+            hSel.appendChild(opt);
+        });
+
+        /* Department selector */
+        const dSel = document.getElementById('headerDepartment');
+        departments.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            dSel.appendChild(opt);
+        });
+
+        /* Filter: Doctor */
+        const fDoc = document.getElementById('filterDoctor');
+        doctors.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            fDoc.appendChild(opt);
+        });
+
+        /* Filter: Specialization */
+        const fSpec = document.getElementById('filterSpecialization');
+        allSpecializations().forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            fSpec.appendChild(opt);
+        });
+    }
+
+    /* =============================================================
+       WEEK NAVIGATION
+       ============================================================= */
+
+    function updateWeekLabel() {
+        const start = AppState.weekStart;
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const thisMonday = getMonday(today);
+
+        let label;
+        if (start.getTime() === thisMonday.getTime()) {
+            label = 'This Week';
+        } else {
+            const sStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const eStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            label = `${sStr} – ${eStr}`;
+        }
+
+        document.getElementById('weekLabelBtn').textContent = label;
+    }
+
+    /* =============================================================
+       MASTER RENDER
+       ============================================================= */
+
+    function renderAll() {
+        renderAnalytics();
+        renderDoctors();
+        renderBoard();
+        updateWeekLabel();
+    }
+
+    /* =============================================================
+       LOADING SKELETON (initial render simulation)
+       ============================================================= */
+
+    function showLoadingSkeleton() {
+        /* Analytics skeletons */
+        const ac = document.getElementById('analyticsContainer');
+        ac.innerHTML = Array(5).fill('').map(() => `
+            <div class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white border border-slate-100 min-w-[170px] flex-shrink-0">
+                <div class="w-10 h-10 rounded-xl skeleton"></div>
+                <div class="flex-1">
+                    <div class="skeleton skeleton-title mb-1.5"></div>
+                    <div class="skeleton skeleton-text w-20"></div>
+                </div>
+            </div>
+        `).join('');
+
+        /* Pool skeletons */
+        const pl = document.getElementById('poolList');
+        pl.innerHTML = Array(6).fill('').map(() => `
+            <div class="bg-white border border-slate-100 rounded-xl p-3">
+                <div class="flex items-start gap-2.5">
+                    <div class="w-9 h-9 rounded-lg skeleton skeleton-circle"></div>
+                    <div class="flex-1">
+                        <div class="skeleton skeleton-title mb-1.5"></div>
+                        <div class="skeleton skeleton-text w-24 mb-2"></div>
+                        <div class="skeleton skeleton-text w-16"></div>
+                    </div>
+                </div>
+                <div class="mt-3 flex gap-1.5">
+                    <div class="skeleton h-7 flex-1 rounded-lg"></div>
+                    <div class="skeleton h-7 w-7 rounded-lg"></div>
+                </div>
+            </div>
+        `).join('');
+
+        /* Board skeletons */
+        const bc = document.getElementById('kanbanColumns');
+        bc.innerHTML = Array(7).fill('').map(() => `
+            <div class="flex-shrink-0" style="width:250px;">
+                <div class="rounded-xl p-3 mb-2.5 border border-slate-100 bg-white">
+                    <div class="skeleton skeleton-title w-20 mb-1.5"></div>
+                    <div class="skeleton skeleton-text w-16"></div>
+                </div>
+                <div class="space-y-2">
+                    ${Array(4).fill('').map(() => `
+                        <div class="rounded-xl border border-slate-100 bg-white overflow-hidden">
+                            <div class="px-3 py-1.5 border-b border-slate-50">
+                                <div class="skeleton skeleton-text w-16"></div>
+                            </div>
+                            <div class="p-1.5 space-y-1.5">
+                                <div class="skeleton h-16 rounded-lg"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    /* =============================================================
+       EVENT BINDING (using event delegation where appropriate)
+       ============================================================= */
+
+    function bindGlobalEvents() {
+        /* --- Header selectors --- */
+        document.getElementById('headerHospital').addEventListener('change', function () {
+            AppState.hospitalFilter = this.value;
+            renderAll();
+        });
+
+        document.getElementById('headerDepartment').addEventListener('change', function () {
+            AppState.departmentFilter = this.value;
+            renderAll();
+        });
+
+        /* --- Header search --- */
+        document.getElementById('headerSearch').addEventListener('input', debounce(function () {
+            AppState.searchQuery = this.value;
+            renderAll();
+        }, 200));
+
+        /* --- Pool search --- */
+        document.getElementById('poolSearchInput').addEventListener('input', debounce(function () {
+            AppState.poolSearchQuery = this.value;
+            renderDoctors();
+        }, 150));
+
+        const mobilePoolSearch = document.getElementById('mobilePoolSearchInput');
+        if (mobilePoolSearch) {
+            mobilePoolSearch.addEventListener('input', debounce(function () {
+                AppState.poolSearchQuery = this.value;
+                renderDoctors();
+            }, 150));
+        }
+
+        /* --- Filter bar --- */
+        document.getElementById('filterDoctor').addEventListener('change', function () {
+            AppState.filters.doctor = this.value;
+            renderAll();
+        });
+
+        document.getElementById('filterSpecialization').addEventListener('change', function () {
+            AppState.filters.specialization = this.value;
+            renderAll();
+        });
+
+        document.getElementById('filterDay').addEventListener('change', function () {
+            AppState.filters.day = this.value;
+            renderAll();
+        });
+
+        document.getElementById('filterShift').addEventListener('change', function () {
+            AppState.filters.shift = this.value;
+            renderAll();
+        });
+
+        document.getElementById('filterAvailability').addEventListener('change', function () {
+            AppState.filters.availability = this.value;
+            renderAll();
+        });
+
+        document.getElementById('clearFiltersBtn').addEventListener('click', function () {
+            AppState.filters = { doctor: '', specialization: '', day: '', shift: '', availability: '' };
+            AppState.searchQuery = '';
+            AppState.poolSearchQuery = '';
+            AppState.hospitalFilter = '';
+            AppState.departmentFilter = '';
+
+            document.getElementById('headerHospital').value = '';
+            document.getElementById('headerDepartment').value = '';
+            document.getElementById('filterDoctor').value = '';
+            document.getElementById('filterSpecialization').value = '';
+            document.getElementById('filterDay').value = '';
+            document.getElementById('filterShift').value = '';
+            document.getElementById('filterAvailability').value = '';
+            document.getElementById('headerSearch').value = '';
+            document.getElementById('poolSearchInput').value = '';
+
+            renderAll();
+            showToast('All filters have been reset.', 'info');
+        });
+
+        /* --- Week navigation --- */
+        document.getElementById('weekPrevBtn').addEventListener('click', function () {
+            AppState.weekStart.setDate(AppState.weekStart.getDate() - 7);
+            renderAll();
+        });
+
+        document.getElementById('weekNextBtn').addEventListener('click', function () {
+            AppState.weekStart.setDate(AppState.weekStart.getDate() + 7);
+            renderAll();
+        });
+
+        document.getElementById('weekTodayBtn').addEventListener('click', function () {
+            AppState.weekStart = getMonday(new Date());
+            renderAll();
+        });
+
+        /* --- Notification bell --- */
+        document.getElementById('notifBtn').addEventListener('click', function () {
+            const dot = document.getElementById('notifDot');
+            if (dot) dot.style.display = 'none';
+            showToast('You have no new notifications.', 'info');
+        });
+
+        /* --- Profile button --- */
+        document.getElementById('profileBtn').addEventListener('click', function () {
+            showToast('Profile settings coming soon.', 'info');
+        });
+
+        /* --- Mobile search --- */
+        document.getElementById('mobileSearchBtn').addEventListener('click', function () {
+            showToast('Use the search bar on larger screens or apply filters.', 'info');
+        });
+
+        /* --- Mobile pool toggle --- */
+        document.getElementById('mobileMenuBtn').addEventListener('click', function () {
+            const overlay = document.getElementById('mobilePoolOverlay');
+            overlay.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                document.getElementById('mobilePoolSlide').style.transform = 'translateX(0)';
+            });
+        });
+
+        document.getElementById('mobilePoolCloseBtn').addEventListener('click', closeMobilePool);
+        document.getElementById('mobilePoolBg').addEventListener('click', closeMobilePool);
+
+        /* --- Pool view toggle --- */
+        document.querySelectorAll('.pool-view-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.pool-view-btn').forEach(b => {
+                    b.classList.remove('bg-white', 'text-brand-600', 'shadow-card');
+                    b.classList.add('text-slate-300');
+                });
+                this.classList.add('bg-white', 'text-brand-600', 'shadow-card');
+                this.classList.remove('text-slate-300');
+                AppState.poolView = this.dataset.poolView;
+                renderDoctors();
+            });
+        });
+
+        /* --- Drawer close --- */
+        document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
+
+        /* --- Modal close (delegation) --- */
+        document.getElementById('modalBackdrop').addEventListener('click', function (e) {
+            if (e.target === this || e.target.closest('.js-modal-close')) {
+                closeModal();
+            }
+        });
+
+        /* --- Drawer backdrop close --- */
+        document.getElementById('drawerBackdrop').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeDrawer();
+            }
+        });
+
+        /* --- Event delegation: Pool card buttons --- */
+        document.getElementById('poolList').addEventListener('click', handlePoolClick);
+        const mobilePoolList = document.getElementById('mobilePoolList');
+        if (mobilePoolList) {
+            mobilePoolList.addEventListener('click', handlePoolClick);
+        }
+
+        /* --- Event delegation: Board card buttons --- */
+        document.getElementById('kanbanColumns').addEventListener('click', handleBoardClick);
+
+        /* --- Keyboard: Escape closes everything --- */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('modalBackdrop').classList.contains('active')) {
+                    closeModal();
+                } else if (document.getElementById('drawerPanel').classList.contains('active')) {
+                    closeDrawer();
+                } else {
+                    closeMobilePool();
+                }
+            }
+        });
+    }
+
+    /**
+     * Handle clicks on pool doctor cards (event delegation)
+     */
+    function handlePoolClick(e) {
+        const assignBtn = e.target.closest('.js-pool-assign');
+        const viewAptBtn = e.target.closest('.js-pool-view-apt');
+
+        if (assignBtn && !assignBtn.disabled) {
+            e.stopPropagation();
+            assignDoctor(assignBtn.dataset.doctorId);
+        }
+
+        if (viewAptBtn) {
+            e.stopPropagation();
+            openAppointmentDrawer(viewAptBtn.dataset.doctorId, null);
+        }
+    }
+
+    /**
+     * Handle clicks on board doctor cards (event delegation)
+     */
+    function handleBoardClick(e) {
+        const viewAptBtn = e.target.closest('.js-board-view-apt');
+        const editBtn = e.target.closest('.js-board-edit');
+        const deleteBtn = e.target.closest('.js-board-delete');
+
+        if (viewAptBtn) {
+            e.stopPropagation();
+            openAppointmentDrawer(viewAptBtn.dataset.doctorId, viewAptBtn.dataset.day);
+        }
+
+        if (editBtn) {
+            e.stopPropagation();
+            editSchedule(editBtn.dataset.scheduleId);
+        }
+
+        if (deleteBtn) {
+            e.stopPropagation();
+            deleteSchedule(deleteBtn.dataset.scheduleId);
+        }
+    }
+
+    /* =============================================================
+       INITIALIZATION
+       ============================================================= */
+
+    function init() {
+        /* Set initial week */
+        AppState.weekStart = getMonday(new Date());
+
+        /* Populate dropdown selectors with data */
+        populateSelectors();
+
+        /* Show loading skeleton */
+        showLoadingSkeleton();
+
+        /* Bind all global event listeners */
+        bindGlobalEvents();
+
+        /* Simulate loading delay then render real data */
+        setTimeout(() => {
+            AppState.loading = false;
+            renderAll();
+        }, 800);
+    }
+
+    /* =============================================================
+       BOOT
+       ============================================================= */
+    document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

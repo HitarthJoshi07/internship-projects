@@ -1,0 +1,1832 @@
+// ==========================================================================
+// Hospital Admin Panel — state + rendering
+//
+// Data model
+// ----------
+// hospitals = [
+//   {
+//     id: "h_xxx",
+//     name: "City General Hospital",
+//     location: "New York, NY",
+//     emergency: true,
+//     branches: ["Queens", "Brooklyn"],
+//     departments: [
+//       { name: "Cardiology", doctors: ["Dr. Rao", "Dr. Singh"] }
+//     ]
+//   },
+//   ...
+// ]
+//
+// While the form is open (adding OR editing), all of that lives in
+// `formState`, which is just a plain JS object you can read/mutate directly
+// from the console or from other code:
+//
+//   formState.branches.push("New Branch");
+//   renderBranches();
+//
+// On Save, formState is copied into a hospital object and pushed into (or
+// replaces an entry in) `hospitals`.
+// ==========================================================================
+
+// ---- Persistent store (all saved hospitals) -----------------------------
+let hospitals = [];
+
+// ---- Draft state (the form currently being filled out) ------------------
+function emptyFormState() {
+    return {
+        id: "",
+        name: "",
+        location: "",
+        emergency: false,
+        branches: [],
+        departments: [], // { name, doctors: [] }
+    };
+}
+
+let formState = emptyFormState();
+
+// null while adding a new hospital, otherwise the id of the hospital being edited
+let editingHospitalId = null;
+
+// index of the department currently receiving a new doctor (via #add-doctor)
+let activeDepartmentIndex = null;
+
+// ---- DOM references -------------------------------------------------------
+const form = document.getElementById("hospital-form");
+const hospitalIdInput = document.getElementById("hospital-id");
+const hospitalNameInput = document.getElementById("hospital-name");
+const hospitalLocationInput = document.getElementById("hospital-location");
+const hospitalEmergencyInput = document.getElementById("hospital-emergency");
+const formFeedback = document.getElementById("form-feedback");
+const formTitle = document.getElementById("form-title");
+const formDescription = document.getElementById("form-description");
+
+const newHospitalBtn = document.getElementById("new-hospital-btn");
+const cancelBtn = document.getElementById("cancel-hospital-btn");
+const saveBtn = document.getElementById("save-hospital-btn");
+
+const hospitalListEl = document.getElementById("hospital-list");
+
+// Branches
+const addBranchBtn = document.getElementById("add-branch-btn");
+const branchTemplate = document.getElementById("branch-template");
+const branchInput = document.getElementById("branch-input");
+const branchesListEl = document.getElementById("branches-list");
+
+// Departments / Doctors
+const addDepartmentBtn = document.getElementById("add-department-btn");
+const departmentsListEl = document.getElementById("departments-list");
+const addDeptBox = document.getElementById("add-dept");
+const selectDeptInput = document.getElementById("select-dept");
+const addDoctorBox = document.getElementById("add-doctor");
+const selectDoctorInput = document.getElementById("select-doctor");
+
+// ---- Utilities --------------------------------------------------------
+function generateId() {
+    return "h_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function showFeedback(message, isError = true) {
+    formFeedback.textContent = message || "";
+    formFeedback.classList.toggle("text-rose-400", isError);
+    formFeedback.classList.toggle("text-emerald-400", !isError);
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
+// ---- Branches -----------------------------------------------------------
+addBranchBtn.addEventListener("click", () => {
+    branchTemplate.classList.remove("hidden");
+    branchInput.value = "";
+    branchInput.focus();
+});
+
+// The template has two buttons: [data-action="add-branch"] confirms the
+// entry, [data-action="remove-branch"] cancels it. Delegate on the template.
+branchTemplate.addEventListener("click", (e) => {
+    const action = e.target.closest("[data-action]")?.dataset.action;
+    if (!action) return;
+
+    if (action === "add-branch") {
+        const value = branchInput.value.trim();
+        if (!value) {
+            branchInput.focus();
+            return;
+        }
+        formState.branches.push(value);
+        renderBranches();
+        branchInput.value = "";
+        branchInput.focus(); // stays open so you can add several in a row
+    }
+
+    if (action === "remove-branch") {
+        branchTemplate.classList.add("hidden");
+        branchInput.value = "";
+    }
+});
+
+// Allow Enter key inside the branch input to confirm too
+branchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        branchTemplate.querySelector('[data-action="add-branch"]').click();
+    }
+});
+
+function renderBranches() {
+    if (formState.branches.length === 0) {
+        branchesListEl.innerHTML =
+            '<p class="text-sm text-gray-400">No branches added yet.</p>';
+        return;
+    }
+
+    branchesListEl.innerHTML = formState.branches
+        .map(
+            (branch, index) => `
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-gray-600 bg-gray-800 px-4 py-2 text-white">
+            <span class="text-sm">${escapeHtml(branch)}</span>
+            <button type="button" data-remove-branch="${index}"
+                class="text-xs font-semibold text-rose-300 hover:text-rose-200">
+                Remove
+            </button>
+        </div>`
+        )
+        .join("");
+}
+
+branchesListEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove-branch]");
+    if (!btn) return;
+    const index = Number(btn.dataset.removeBranch);
+    formState.branches.splice(index, 1);
+    renderBranches();
+});
+
+// ---- Departments & Doctors ------------------------------------------------
+addDepartmentBtn.addEventListener("click", () => {
+    addDeptBox.classList.remove("hidden");
+    selectDeptInput.value = "";
+    selectDeptInput.focus();
+});
+
+selectDeptInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+
+    const name = selectDeptInput.value.trim();
+    if (!name) return;
+
+    const alreadyExists = formState.departments.some(
+        (d) => d.name.toLowerCase() === name.toLowerCase()
+    );
+    if (alreadyExists) {
+        showFeedback(`"${name}" is already added.`);
+        return;
+    }
+
+    formState.departments.push({ name, doctors: [] });
+    renderDepartments();
+    showFeedback("");
+
+    selectDeptInput.value = "";
+    addDeptBox.classList.add("hidden");
+});
+
+selectDoctorInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+
+    const name = selectDoctorInput.value.trim();
+    if (!name || activeDepartmentIndex === null) return;
+
+    formState.departments[activeDepartmentIndex].doctors.push(name);
+    renderDepartments();
+
+    selectDoctorInput.value = "";
+    addDoctorBox.classList.add("hidden");
+    activeDepartmentIndex = null;
+});
+
+function renderDepartments() {
+    // Wipe everything except the two reusable input boxes, then rebuild.
+    departmentsListEl.innerHTML = "";
+
+    if (formState.departments.length === 0) {
+        const emptyMsg = document.createElement("p");
+        emptyMsg.className = "text-sm text-gray-400";
+        emptyMsg.textContent = "No departments added yet.";
+        departmentsListEl.appendChild(emptyMsg);
+    }
+
+    formState.departments.forEach((dept, deptIndex) => {
+        const card = document.createElement("div");
+        card.className = "rounded-xl border border-gray-600 p-4 text-white space-y-3";
+
+        const doctorsHtml = dept.doctors.length
+            ? dept.doctors
+                  .map(
+                      (doc, docIndex) => `
+                <div class="flex items-center justify-between gap-3 rounded-lg bg-gray-800 px-3 py-2">
+                    <span class="text-sm">${escapeHtml(doc)}</span>
+                    <button type="button" data-remove-doctor="${deptIndex}:${docIndex}"
+                        class="text-xs font-semibold text-rose-300 hover:text-rose-200">
+                        Remove
+                    </button>
+                </div>`
+                  )
+                  .join("")
+            : '<p class="text-xs text-gray-400">No doctors added yet.</p>';
+
+        card.innerHTML = `
+            <div class="flex items-center justify-between gap-3">
+                <h4 class="font-semibold">${escapeHtml(dept.name)}</h4>
+                <div class="flex gap-2">
+                    <button type="button" data-add-doctor-for="${deptIndex}"
+                        class="rounded-lg bg-gray-600 px-3 py-1 text-xs font-semibold hover:bg-gray-700">
+                        Add Doctor
+                    </button>
+                    <button type="button" data-remove-department="${deptIndex}"
+                        class="rounded-lg bg-rose-600/80 px-3 py-1 text-xs font-semibold hover:bg-rose-600">
+                        Remove Dept
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-2">${doctorsHtml}</div>
+        `;
+
+        departmentsListEl.appendChild(card);
+    });
+
+    // Re-append the (currently hidden) reusable input boxes at the bottom
+    departmentsListEl.appendChild(addDeptBox);
+    departmentsListEl.appendChild(addDoctorBox);
+}
+
+departmentsListEl.addEventListener("click", (e) => {
+    const removeDept = e.target.closest("[data-remove-department]");
+    if (removeDept) {
+        const index = Number(removeDept.dataset.removeDepartment);
+        formState.departments.splice(index, 1);
+        renderDepartments();
+        return;
+    }
+
+    const removeDoctor = e.target.closest("[data-remove-doctor]");
+    if (removeDoctor) {
+        const [deptIndex, docIndex] = removeDoctor.dataset.removeDoctor
+            .split(":")
+            .map(Number);
+        formState.departments[deptIndex].doctors.splice(docIndex, 1);
+        renderDepartments();
+        return;
+    }
+
+    const addDoctorFor = e.target.closest("[data-add-doctor-for]");
+    if (addDoctorFor) {
+        activeDepartmentIndex = Number(addDoctorFor.dataset.addDoctorFor);
+        addDoctorBox.classList.remove("hidden");
+        addDoctorFor.closest(".rounded-xl").appendChild(addDoctorBox);
+        selectDoctorInput.value = "";
+        selectDoctorInput.focus();
+    }
+});
+
+// ---- Form submit: build the hospital object -----------------------------
+form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const name = hospitalNameInput.value.trim();
+    const location = hospitalLocationInput.value.trim();
+
+    if (!name || !location) {
+        showFeedback("Hospital name and location are required.");
+        return;
+    }
+
+    const hospital = {
+        id: hospitalIdInput.value.trim() || editingHospitalId || generateId(),
+        name,
+        location,
+        emergency: hospitalEmergencyInput.checked,
+        branches: [...formState.branches],
+        departments: formState.departments.map((d) => ({
+            name: d.name,
+            doctors: [...d.doctors],
+        })),
+    };
+
+    if (editingHospitalId) {
+        const idx = hospitals.findIndex((h) => h.id === editingHospitalId);
+        if (idx !== -1) hospitals[idx] = hospital;
+    } else {
+        hospitals.push(hospital);
+    }
+
+    showFeedback(
+        editingHospitalId ? "Hospital updated." : "Hospital added.",
+        false
+    );
+
+    renderHospitalList();
+    resetForm();
+});
+
+// ---- Reset / cancel / new --------------------------------------------
+function resetForm() {
+    formState = emptyFormState();
+    editingHospitalId = null;
+    activeDepartmentIndex = null;
+
+    hospitalIdInput.value = "";
+    hospitalNameInput.value = "";
+    hospitalLocationInput.value = "";
+    hospitalEmergencyInput.checked = false;
+
+    branchTemplate.classList.add("hidden");
+    addDeptBox.classList.add("hidden");
+    addDoctorBox.classList.add("hidden");
+
+    formTitle.textContent = "Add Hospital";
+    formDescription.textContent =
+        "Provide hospital details and save to update the list.";
+    saveBtn.textContent = "Add hospital";
+
+    renderBranches();
+    renderDepartments();
+    showFeedback("");
+}
+
+newHospitalBtn.addEventListener("click", () => {
+    resetForm();
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+cancelBtn.addEventListener("click", () => {
+    resetForm();
+});
+
+// ---- Saved hospitals list (edit / delete) --------------------------------
+function renderHospitalList() {
+    if (hospitals.length === 0) {
+        hospitalListEl.innerHTML =
+            '<p class="text-sm text-gray-300">No hospitals added yet.</p>';
+        return;
+    }
+
+    hospitalListEl.innerHTML = hospitals
+        .map(
+            (h) => `
+        <div class="mb-3 rounded-xl border border-gray-600 bg-gray-900 p-4 text-white">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="font-semibold">${escapeHtml(h.name)}</h3>
+                    <p class="text-sm text-gray-400">${escapeHtml(h.location)}</p>
+                    <p class="mt-1 text-xs text-gray-400">
+                        ${h.emergency ? "Emergency services available" : "No emergency services"}
+                        · ${h.branches.length} branch(es)
+                        · ${h.departments.length} department(s)
+                    </p>
+                </div>
+                <div class="flex shrink-0 gap-2">
+                    <button type="button" data-edit-hospital="${h.id}"
+                        class="rounded-lg bg-gray-600 px-3 py-1 text-xs font-semibold hover:bg-gray-700">
+                        Edit
+                    </button>
+                    <button type="button" data-delete-hospital="${h.id}"
+                        class="rounded-lg bg-rose-600/80 px-3 py-1 text-xs font-semibold hover:bg-rose-600">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>`
+        )
+        .join("");
+}
+
+hospitalListEl.addEventListener("click", (e) => {
+    const editBtn = e.target.closest("[data-edit-hospital]");
+    if (editBtn) {
+        loadHospitalIntoForm(editBtn.dataset.editHospital);
+        return;
+    }
+
+    const deleteBtn = e.target.closest("[data-delete-hospital]");
+    if (deleteBtn) {
+        const id = deleteBtn.dataset.deleteHospital;
+        if (confirm("Delete this hospital?")) {
+            hospitals = hospitals.filter((h) => h.id !== id);
+            renderHospitalList();
+            if (editingHospitalId === id) resetForm();
+        }
+    }
+});
+
+function loadHospitalIntoForm(id) {
+    const hospital = hospitals.find((h) => h.id === id);
+    if (!hospital) return;
+
+    editingHospitalId = hospital.id;
+    formState = {
+        id: hospital.id,
+        name: hospital.name,
+        location: hospital.location,
+        emergency: hospital.emergency,
+        branches: [...hospital.branches],
+        departments: hospital.departments.map((d) => ({
+            name: d.name,
+            doctors: [...d.doctors],
+        })),
+    };
+
+    hospitalIdInput.value = hospital.id;
+    hospitalNameInput.value = hospital.name;
+    hospitalLocationInput.value = hospital.location;
+    hospitalEmergencyInput.checked = hospital.emergency;
+
+    formTitle.textContent = "Edit Hospital";
+    formDescription.textContent = `Editing "${hospital.name}". Save to apply changes.`;
+    saveBtn.textContent = "Save changes";
+
+    renderBranches();
+    renderDepartments();
+    showFeedback("");
+
+    form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// ---- Init -----------------------------------------------------------------
+resetForm();
+renderHospitalList();
+
+new ui 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+--------------------------------------------------------------------------------------------<!DOCTYPE html>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Little Oak Family Hospital — Book an Appointment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style>
+        :root {
+            --ink: #1C3838;
+            --paper: #FBF7EF;
+            --teal: #0F7A6C;
+            --teal-deep: #0B4F47;
+            --coral: #FF7A5C;
+            --coral-deep: #E7603F;
+            --sun: #FFC857;
+            --sky: #D9F0EA;
+            --sky-deep: #BCE6DC;
+        }
+
+        html, body { background: var(--paper); }
+        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; color: var(--ink); }
+        .font-display { font-family: 'Baloo 2', ui-rounded, sans-serif; }
+
+        /* soft custom scrollbar */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--sky-deep); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--teal); }
+
+        /* accessible focus ring everywhere */
+        input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15, 122, 108, 0.35);
+            border-color: var(--teal);
+        }
+
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        @keyframes float-slower {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(8px) rotate(-4deg); }
+        }
+        .float-a { animation: float-slow 6s ease-in-out infinite; }
+        .float-b { animation: float-slower 7.5s ease-in-out infinite; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .float-a, .float-b { animation: none; }
+        }
+
+        .brand-mark {
+            background: radial-gradient(circle at 30% 30%, #ffffff33, transparent 60%), var(--coral);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+
+    <!-- ===== HEADER / BRAND NAV ===== -->
+    <header class="relative bg-gradient-to-r from-[var(--teal-deep)] via-[var(--teal)] to-[var(--teal)] text-white overflow-hidden">
+        <!-- decorative floating shapes, purely visual -->
+        <div class="pointer-events-none absolute -top-6 right-24 w-16 h-16 rounded-3xl bg-[var(--sun)]/20 float-a hidden sm:block"></div>
+        <div class="pointer-events-none absolute top-8 right-56 w-10 h-10 rounded-full bg-white/10 float-b hidden lg:block"></div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="brand-mark w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shrink-0">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2 4.5 5.6 4.1c2-.2 3.6.8 4.7 2.4 1.2-1.6 2.7-2.6 4.7-2.4 3.6.4 5.2 4 3.6 7.6C19.5 16.4 12 21 12 21z" fill="white" fill-opacity="0.95"/>
+                        <path d="M12 21s-7.5-4.6-10-9.3C.4 8.1 2 4.5 5.6 4.1c2-.2 3.6.8 4.7 2.4 1.2-1.6 2.7-2.6 4.7-2.4 3.6.4 5.2 4 3.6 7.6C19.5 16.4 12 21 12 21z" stroke="white" stroke-width="0"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-display font-bold text-lg sm:text-xl leading-tight tracking-tight">Little Oak Family Hospital</p>
+                    <p class="text-[11px] sm:text-xs text-white/80 -mt-0.5">Gentle care for little ones, trusted care for everyone</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button id="book-appoint-btn"
+                    class="bg-[var(--coral)] hover:bg-[var(--coral-deep)] transition-colors text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-black/10 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+                    Book Appointment
+                </button>
+                <button id="cancel-appoint-btn"
+                    class="bg-white/10 hover:bg-white/20 transition-colors text-white text-sm font-semibold px-4 py-2.5 rounded-xl border border-white/25 flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg>
+                    Cancel Appointment
+                </button>
+            </div>
+        </div>
+
+        <!-- wave divider signature element -->
+        <svg class="block w-full text-[var(--paper)]" viewBox="0 0 1440 44" fill="currentColor" preserveAspectRatio="none" style="height: 28px;">
+            <path d="M0,22 C240,44 480,0 720,11 C960,22 1200,44 1440,16 L1440,44 L0,44 Z"></path>
+        </svg>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <section class="appointment w-full min-h-[calc(100vh-6.5rem)] flex flex-col lg:flex-row gap-5 max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+        <!-- decorative / informational sidebar (JS does not touch this) -->
+        <aside class="w-full lg:w-64 shrink-0 lg:sticky lg:top-6 lg:self-start">
+            <div class="bg-white rounded-3xl border border-[var(--sky-deep)] shadow-sm p-5 space-y-4">
+                <p class="font-display font-bold text-[var(--teal-deep)] text-base">Why families choose us</p>
+
+                <div class="flex items-start gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-[var(--sky)] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4-3-8-6.5-8-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 4.5-4 8-8 11z"/></svg>
+                    </span>
+                    <p class="text-sm text-slate-600">Kid-friendly waiting rooms and gentle, patient staff</p>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-[var(--sky)] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                    </span>
+                    <p class="text-sm text-slate-600">Same-week appointments across every department</p>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <span class="w-8 h-8 rounded-xl bg-[var(--sky)] flex items-center justify-center shrink-0">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7l-9-5Z"/></svg>
+                    </span>
+                    <p class="text-sm text-slate-600">Board-certified doctors, fully licensed hospitals</p>
+                </div>
+
+                <div class="pt-2 border-t border-dashed border-[var(--sky-deep)]">
+                    <p class="text-xs text-slate-400">Pick a hospital to see its departments and available doctors.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- hospitals grid -->
+        <div class="flex-1 min-w-0">
+            <div class="flex items-end justify-between mb-4 px-1">
+                <div>
+                    <h1 class="font-display font-extrabold text-2xl sm:text-3xl text-[var(--teal-deep)]">Find a hospital</h1>
+                    <p class="text-sm text-slate-500 mt-0.5">Choose a location to book your visit</p>
+                </div>
+            </div>
+
+            <div id="page-hospitals" class="w-full grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 pb-10"></div>
+        </div>
+
+    </section>
+
+    <!-- ===== BOOK APPOINTMENT MODAL ===== -->
+    <div id="book-appointment-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-[var(--ink)]/50 backdrop-blur-sm"></div>
+
+        <div class="absolute top-1/2 left-1/2 w-full max-w-2xl -translate-x-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto border border-[var(--sky-deep)]">
+
+            <!-- modal header banner -->
+            <div class="bg-gradient-to-r from-[var(--teal-deep)] to-[var(--teal)] text-white px-6 py-5 rounded-t-3xl flex items-center justify-between sticky top-0 z-10">
+                <div>
+                    <h2 class="font-display font-bold text-xl">Book Appointment</h2>
+                    <p class="text-xs text-white/80 mt-0.5">Takes less than a minute — we'll confirm by email</p>
+                </div>
+                <button id="close-appoint-btn" aria-label="Close" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center">
+                    ✕
+                </button>
+            </div>
+
+            <div class="p-6">
+                <form id="appointment-form" class="space-y-6">
+
+                    <!-- Section: your details -->
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide text-[var(--coral-deep)] mb-3">Your details</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <label for="member-name" class="block text-xs text-slate-600 font-semibold mb-1">Full Name *</label>
+                                <input id="member-name" type="text" placeholder="Enter your full name" autocomplete="name"
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                            </div>
+
+                            <div>
+                                <label for="member-email" class="block text-xs text-slate-600 font-semibold mb-1">Email *</label>
+                                <input id="member-email" type="email" placeholder="johncena@gmail.com" autocomplete="email"
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                            </div>
+
+                            <div>
+                                <label for="phone-no" class="block text-xs text-slate-600 font-semibold mb-1">Phone *</label>
+                                <input id="phone-no" type="tel" placeholder="+91 943XX XXXXX" autocomplete="tel"
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                            </div>
+
+                            <div>
+                                <label for="member-address" class="block text-xs text-slate-600 font-semibold mb-1">Address</label>
+                                <input id="member-address" type="text" placeholder="123 Main St, City, State" autocomplete="street-address"
+                                    class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: appointment details -->
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide text-[var(--coral-deep)] mb-3">Appointment details</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div>
+                                <label for="time-slot" class="block text-xs text-slate-600 font-semibold mb-1">Time Slot *</label>
+                                <select id="time-slot" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                                    <option value="">Select Time</option>
+                                    <option>09:00 AM</option>
+                                    <option>09:30 AM</option>
+                                    <option>10:00 AM</option>
+                                    <option>10:30 AM</option>
+                                    <option>11:00 AM</option>
+                                    <option>11:30 AM</option>
+                                    <option>02:00 PM</option>
+                                    <option>02:30 PM</option>
+                                    <option>03:00 PM</option>
+                                    <option>03:30 PM</option>
+                                    <option>04:00 PM</option>
+                                    <option>04:30 PM</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="hospital" class="block text-xs text-slate-600 font-semibold mb-1">Hospital *</label>
+                                <select id="hospital" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                                    <option value="">Select Hospital</option>
+                                    <option>City General Hospital</option>
+                                    <option>Metro Health Center</option>
+                                    <option>Sunrise Community Hospital</option>
+                                    <option>Apex Medical Institute</option>
+                                    <option>Pacific View Hospital</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="form-group flex flex-col" data-field="date">
+                                    <label for="date" class="block text-xs text-slate-600 font-semibold mb-1">Preferred Date</label>
+                                    <input type="date" id="date" min="today"
+                                        class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                                    <div id="error" class="text-red-500 text-xs mt-1"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="department" class="block text-xs text-slate-600 font-semibold mb-1">Department *</label>
+                                <select id="department" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]" required>
+                                    <option value="">Select Department</option>
+                                    <option>General Medicine</option>
+                                    <option>Cardiology</option>
+                                    <option>Orthopedics</option>
+                                    <option>Dermatology</option>
+                                    <option>Pediatrics</option>
+                                    <option>Neurology</option>
+                                    <option>ENT</option>
+                                    <option>Ophthalmology</option>
+                                </select>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label for="doctor" class="block text-xs text-slate-600 font-semibold mb-1">Doctor *</label>
+                                <select id="doctor" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:border-[var(--teal)]">
+                                    <option value="">Select Doctor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: reason -->
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide text-[var(--coral-deep)] mb-3">Reason for visit</p>
+                        <label for="reason" class="sr-only">Reason for Visit</label>
+                        <textarea id="reason" rows="3" placeholder="Briefly describe your symptoms or reason for visit..."
+                            class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm placeholder-slate-400 focus:border-[var(--teal)]"></textarea>
+                    </div>
+
+                    <div id="member-form-error" class="hidden text-red-500 text-sm bg-red-50 border border-red-100 rounded-xl px-3 py-2"></div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="submit" id="apnt-confirm-btn"
+                            class="flex-1 bg-[var(--coral)] hover:bg-[var(--coral-deep)] transition-colors text-white font-semibold rounded-xl py-2.5 shadow-md shadow-black/10">
+                            Confirm Appointment
+                        </button>
+
+                        <button id="apnt-cancel-btn" type="button"
+                            class="flex-1 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700 font-semibold rounded-xl py-2.5">
+                            Cancel
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="./index.js" type="module" defer></script>
+</body>
+
+</html>
+
+
+--------------------==============================---------------------------==============================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+and the index.js
+
+
+
+// import { data } from "./data.js"; // apni file path ke hisaab se change kar lena
+// import { AdminData } from "./admin.js"
+
+
+const cancelAppointBtn = document.getElementById("cancel-appoint-btn")
+const bookAppointBtn = document.getElementById("book-appoint-btn")
+const bookAppointmentModal = document.getElementById("book-appointment-modal")
+const closeAppointmentDialog = document.getElementById("close-appoint-btn")
+const apntCancelBtn = document.getElementById("apnt-cancel-btn")
+const apntConfirmBtn = document.getElementById("apnt-confirm-btn")
+
+function openOnBtnClick(button, dialog) {
+    button.addEventListener("click", () => { dialog.classList.remove("hidden"); });
+}
+
+function closeOnBtnClick(button, dialog) {
+    button.addEventListener("click", () => { dialog.classList.add("hidden"); });
+}
+
+
+openOnBtnClick(bookAppointBtn, bookAppointmentModal);
+openOnBtnClick(cancelAppointBtn, bookAppointmentModal);
+
+closeOnBtnClick(closeAppointmentDialog, bookAppointmentModal)
+
+apntCancelBtn.addEventListener("click", () => {
+    alert("Appointment booking cancelled.");
+    bookAppointmentModal.classList.add("hidden");
+})
+
+
+const container = document.getElementById("page-hospitals");
+
+// const hospitalImages = [
+//  "https://picsum.photos/seed/48392/800/600",
+//   "https://picsum.photos/seed/91754/800/600",
+//   "https://picsum.photos/seed/26183/800/600",
+//   "https://picsum.photos/seed/74015/800/600",
+//   "https://picsum.photos/seed/15927/800/600",
+//   "https://picsum.photos/seed/68431/800/600",
+//   "https://picsum.photos/seed/32598/800/600"    
+// ];
+
+
+
+// const doctorsByDept = {
+//     "General Medicine": ["Dr. Anil Mehta", "Dr. Priya Sharma", "Dr. Rajesh Kumar"],
+//     "Cardiology": ["Dr. Suresh Rao", "Dr. Kavitha Nair"],
+//     "Orthopedics": ["Dr. Vikram Singh", "Dr. Deepa Menon", "Dr. Arun Patel"],
+//     "Dermatology": ["Dr. Meera Joshi", "Dr. Ravi Iyer"],
+//     "Pediatrics": ["Dr. Sanjay Gupta", "Dr. Nisha Verma"],
+//     "Neurology": ["Dr. Prakash Bhat", "Dr. Anjali Desai"],
+//     "ENT": ["Dr. Mohammed Farhan", "Dr. Lakshmi Rao"],
+//     "Ophthalmology": ["Dr. Suman Reddy", "Dr. Pooja Kulkarni"]
+// };
+
+const AdminData = JSON.parse(localStorage.getItem("AdminData") || []);
+console.log(AdminData)
+
+
+const departments = AdminData.flatMap(hospital => hospital.departments);
+console.log(departments);
+
+const doctor = document.getElementById("doctor");
+
+
+// department.addEventListener('change', () => {
+//     doctor.innerHTML = `<option value="">Select Doctor</option>`
+
+//     const doctors = doctorsByDept[department.value] || [];
+
+//     doctors.forEach(name => {
+//         const option = document.createElement("option");
+//         option.value = name;
+//         option.textContent = name;
+//         doctor.appendChild(option);
+//     });
+// });
+
+const dateInput = document.getElementById("date");
+
+dateInput.setAttribute(
+    "min",
+    new Date().toISOString().split("T")[0]
+);
+
+dateInput.addEventListener('change', () => {
+    if (!dateInput.value) {
+        error.textContent = "Please select a valid date.";
+    } else {
+        error.textContent = "";
+    }
+})
+
+apntConfirmBtn.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+
+    clearError();
+
+
+    const form = document.getElementById("appointment-form");
+    const memberName = document.getElementById("member-name");
+    const memberEmail = document.getElementById("member-email");
+    const phoneNo = document.getElementById("phone-no");
+    const memberAddress = document.getElementById("member-address");
+    const hospital = document.getElementById("hospital");
+    const department = document.getElementById("department");
+    const doctor = document.getElementById("doctor");
+    const timeSlot = document.getElementById("time-slot");
+    const date = document.getElementById("date");
+    const reason = document.getElementById("reason");
+    const formError = document.getElementById("member-form-error");
+
+
+    if (memberName.value.trim() === "") {
+        showError("Name is required");
+        return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[\s@]+$/;
+    if (!emailRegex.test(memberEmail.value.trim())) {
+        showError("Enter a valid Email");
+        return;
+    }
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phoneNo.value.trim())) {
+        showError("enter a valid phone no");
+        return;
+    }
+    if (hospital.value === "") {
+        hospital.value = AdminData;
+        return;
+    }
+    if (department.value === "") {
+        showError("Select department");
+        return;
+    }
+    if (doctor.value === "") {
+
+        showError("Select doctor");
+
+        return;
+
+    }
+    if (timeSlot.value === "") {
+
+        showError("Select time slot");
+
+        return;
+
+    }
+    if (date.value === "") {
+
+        showError("Select appointment date");
+
+        return;
+
+    }
+    if (reason.value.trim().length < 10) {
+
+        showError("Reason should be at least 10 characters.");
+
+        return;
+
+    }
+    function showError(message) {
+        formError.textContent = message;
+        formError.classList.remove("hidden");
+    }
+    function clearError() {
+        formError.textContent = "";
+        formError.classList.add("hidden");
+    }
+});
+
+
+const pageHospitals = document.getElementById("page-hospitals")
+
+const hospitalName = AdminData.map(hospital => hospital.name);
+const hospitalLocation = AdminData.map(hospital => hospital.location)
+console.log(hospitalName)
+console.log(hospitalLocation)
+
+
+
+
+AdminData.forEach((hospital) => {
+
+    const card = document.createElement("div");
+
+    card.className =
+        "group bg-white rounded-3xl shadow-sm hover:shadow-xl border border-[var(--sky-deep)] transition-all duration-300 hover:-translate-y-1 overflow-hidden";
+
+    card.innerHTML = `
+        <div class="relative h-36 bg-gradient-to-br from-[var(--sky)] to-white flex items-center justify-center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--teal-deep)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="opacity-70 group-hover:scale-110 transition-transform">
+                <path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01"/>
+            </svg>
+            <span class="absolute top-3 right-3 text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded-full ${hospital.emergency ? "bg-[var(--coral)] text-white" : "bg-white/90 text-slate-500"}">
+                ${hospital.emergency ? "24/7 Emergency" : "Scheduled Visits"}
+            </span>
+        </div>
+
+        <div class="p-4 space-y-1.5">
+
+            <h2 class="font-display text-lg font-bold text-[var(--ink)] line-clamp-2">
+                ${hospital.name}
+            </h2>
+
+            <p class="text-sm text-slate-500 flex items-center gap-1">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                ${hospital.location}
+            </p>
+
+            <p class="text-sm text-slate-600 pt-0.5">
+                Emergency:
+                <span class="font-semibold">${hospital.emergency ? "✅ Available" : "❌ Not Available"}</span>
+            </p>
+
+            <button
+                class="hosp-apnt-btn w-full mt-3 bg-[var(--sky)] hover:bg-[var(--coral)] hover:text-white text-[var(--teal-deep)] transition-colors py-2.5 rounded-xl font-semibold text-sm">
+                Book Appointment
+            </button>
+
+        </div>
+    `;
+
+    const btn = card.querySelector(".hosp-apnt-btn");
+
+    btn.addEventListener("click", () => {
+        // console.log(hospital.name);
+
+        bookAppointmentModal.classList.remove("hidden");
+        bookAppointmentModal.querySelector('#hospital').innerHTML = `<option>${hospital.name}</option>`
+        const deptSelect = bookAppointmentModal.querySelector("#department");
+        const doctorSelect = bookAppointmentModal.querySelector("#doctor");
+
+        // Fill departments
+        deptSelect.innerHTML = '<option value="">Select Department</option>';
+
+        hospital.departments.forEach((dept) => {
+            const option = document.createElement("option");
+            option.value = dept.name;
+            option.textContent = dept.name;
+            deptSelect.appendChild(option);
+        });
+
+        // Jab department change ho
+        deptSelect.addEventListener("change", () => {
+
+            // Doctor dropdown clear karo
+            doctorSelect.innerHTML = '<option value="">Select Doctor</option>';
+
+            // Selected department dhoondo
+            const selectedDept = hospital.departments.find(
+                dept => dept.name === deptSelect.value
+            );
+
+            // Agar department mil gaya
+            if (selectedDept) {
+                selectedDept.doctors.forEach((doctor) => {
+                    const option = document.createElement("option");
+                    option.value = doctor;
+                    option.textContent = doctor;
+                    doctorSelect.appendChild(option);
+                });
+            }
+        });
+    });
+
+    pageHospitals.append(card);
+
+});
+
+
+
+
+
+
+----------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+lines for the other minimized
+
+// ---------- State ----------
+let hospitals=[],editId=null,activeDept=null;
+const empty=()=>({id:"",name:"",location:"",emergency:false,branches:[],departments:[]});
+let state=empty();
+
+// ---------- Elements ----------
+const $=id=>document.getElementById(id),
+f=$("hospital-form"),
+idIn=$("hospital-id"),
+nameIn=$("hospital-name"),
+locIn=$("hospital-location"),
+emIn=$("hospital-emergency"),
+msg=$("form-feedback"),
+title=$("form-title"),
+desc=$("form-description"),
+save=$("save-hospital-btn"),
+list=$("hospital-list"),
+branchBtn=$("add-branch-btn"),
+branchBox=$("branch-template"),
+branchIn=$("branch-input"),
+branchList=$("branches-list"),
+deptBtn=$("add-department-btn"),
+deptList=$("departments-list"),
+deptBox=$("add-dept"),
+deptIn=$("select-dept"),
+docBox=$("add-doctor"),
+docIn=$("select-doctor");
+
+// ---------- Helpers ----------
+const gid=()=>"h_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const fb=(t="",e=true)=>{
+msg.textContent=t;
+msg.classList.toggle("text-rose-400",e);
+msg.classList.toggle("text-emerald-400",!e);
+};
+
+// ---------- Branch ----------
+branchBtn.onclick=()=>{
+branchBox.classList.remove("hidden");
+branchIn.value="";
+branchIn.focus();
+};
+
+branchBox.onclick=e=>{
+let a=e.target.closest("[data-action]")?.dataset.action;
+if(!a)return;
+
+if(a=="add-branch"){
+let v=branchIn.value.trim();
+if(!v)return branchIn.focus();
+state.branches.push(v);
+drawBranches();
+branchIn.value="";
+branchIn.focus();
+}else{
+branchBox.classList.add("hidden");
+branchIn.value="";
+}
+};
+
+branchIn.onkeydown=e=>{
+if(e.key!="Enter")return;
+e.preventDefault();
+branchBox.querySelector('[data-action="add-branch"]').click();
+};
+
+const drawBranches=()=>{
+branchList.innerHTML=state.branches.length?
+state.branches.map((b,i)=>`
+<div class="flex items-center justify-between rounded-xl border border-gray-600 bg-gray-800 px-4 py-2">
+<span>${esc(b)}</span>
+<button type="button" data-b="${i}" class="text-rose-300 text-xs">Remove</button>
+</div>`).join("")
+:`<p class="text-sm text-gray-400">No branches added yet.</p>`;
+};
+
+branchList.onclick=e=>{
+let b=e.target.closest("[data-b]");
+if(!b)return;
+state.branches.splice(+b.dataset.b,1);
+drawBranches();
+};
+
+// ---------- Department ----------
+deptBtn.onclick=()=>{
+deptBox.classList.remove("hidden");
+deptIn.value="";
+deptIn.focus();
+};
+
+deptIn.onkeydown=e=>{
+if(e.key!="Enter")return;
+e.preventDefault();
+let n=deptIn.value.trim();
+if(!n)return;
+if(state.departments.some(x=>x.name.toLowerCase()==n.toLowerCase()))
+return fb(`"${n}" already exists.`);
+state.departments.push({name:n,doctors:[]});
+deptIn.value="";
+deptBox.classList.add("hidden");
+fb("");
+drawDept();
+};
+
+docIn.onkeydown=e=>{
+if(e.key!="Enter")return;
+e.preventDefault();
+let n=docIn.value.trim();
+if(!n||activeDept==null)return;
+state.departments[activeDept].doctors.push(n);
+docIn.value="";
+docBox.classList.add("hidden");
+activeDept=null;
+drawDept();
+};
+
+const drawDept=()=>{
+deptList.innerHTML="";
+if(!state.departments.length){
+let p=document.createElement("p");
+p.className="text-sm text-gray-400";
+p.textContent="No departments added yet.";
+deptList.appendChild(p);
+}
+
+state.departments.forEach((d,i)=>{
+let c=document.createElement("div");
+c.className="rounded-xl border border-gray-600 p-4 space-y-3";
+c.innerHTML=`
+<div class="flex justify-between">
+<h4>${esc(d.name)}</h4>
+<div class="flex gap-2">
+<button type="button" data-add="${i}" class="bg-gray-600 px-2 py-1 text-xs rounded">Add Doctor</button>
+<button type="button" data-del="${i}" class="bg-rose-600 px-2 py-1 text-xs rounded">Remove</button>
+</div>
+</div>
+<div>
+${d.doctors.length?
+d.doctors.map((x,j)=>`
+<div class="flex justify-between bg-gray-800 px-3 py-2 rounded mt-2">
+<span>${esc(x)}</span>
+<button type="button" data-doc="${i}:${j}" class="text-xs text-rose-300">Remove</button>
+</div>`).join("")
+:`<p class="text-xs text-gray-400">No doctors added yet.</p>`}
+</div>`;
+deptList.appendChild(c);
+});
+
+deptList.append(deptBox,docBox);
+};
+// ---------- Submit ----------
+f.onsubmit=e=>{
+e.preventDefault();
+
+let name=nameIn.value.trim(),
+loc=locIn.value.trim();
+
+if(!name||!loc)return fb("Hospital name and location are required.");
+
+let h={
+id:idIn.value||editId||gid(),
+name,
+location:loc,
+emergency:emIn.checked,
+branches:[...state.branches],
+departments:state.departments.map(d=>({
+name:d.name,
+doctors:[...d.doctors]
+}))
+};
+
+if(editId){
+let i=hospitals.findIndex(x=>x.id==editId);
+if(i>-1)hospitals[i]=h;
+}else hospitals.push(h);
+
+fb(editId?"Hospital updated.":"Hospital added.",false);
+drawHospitals();
+reset();
+};
+
+// ---------- Reset ----------
+const reset=()=>{
+state=empty();
+editId=null;
+activeDept=null;
+
+idIn.value="";
+nameIn.value="";
+locIn.value="";
+emIn.checked=false;
+
+branchBox.classList.add("hidden");
+deptBox.classList.add("hidden");
+docBox.classList.add("hidden");
+
+title.textContent="Add Hospital";
+desc.textContent="Provide hospital details and save to update the list.";
+save.textContent="Add Hospital";
+
+drawBranches();
+drawDept();
+fb();
+};
+
+// ---------- Buttons ----------
+$("new-hospital-btn").onclick=()=>{
+reset();
+f.scrollIntoView({
+behavior:"smooth",
+block:"start"
+});
+};
+
+$("cancel-hospital-btn").onclick=reset;
+
+// ---------- Department Events ----------
+deptList.onclick=e=>{
+
+let d=e.target.closest("[data-del]");
+if(d){
+state.departments.splice(+d.dataset.del,1);
+return drawDept();
+}
+
+let dc=e.target.closest("[data-doc]");
+if(dc){
+let[a,b]=dc.dataset.doc.split(":").map(Number);
+state.departments[a].doctors.splice(b,1);
+return drawDept();
+}
+
+let ad=e.target.closest("[data-add]");
+if(ad){
+activeDept=+ad.dataset.add;
+docBox.classList.remove("hidden");
+ad.closest(".rounded-xl").appendChild(docBox);
+docIn.value="";
+docIn.focus();
+}
+
+};
+
+// ---------- Hospital List ----------
+const drawHospitals=()=>{
+list.innerHTML=hospitals.length?
+hospitals.map(h=>`
+<div class="mb-3 rounded-xl border border-gray-600 bg-gray-900 p-4 text-white">
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-semibold">${esc(h.name)}</h3>
+<p class="text-sm text-gray-400">${esc(h.location)}</p>
+<p class="text-xs text-gray-400 mt-1">
+${h.emergency?"Emergency services available":"No emergency services"}
+ · ${h.branches.length} branch(es)
+ · ${h.departments.length} department(s)
+</p>
+</div>
+<div class="flex gap-2">
+<button type="button" data-edit="${h.id}"
+class="bg-gray-600 rounded px-3 py-1 text-xs">Edit</button>
+
+<button type="button" data-delete="${h.id}"
+class="bg-rose-600 rounded px-3 py-1 text-xs">Delete</button>
+</div>
+</div>
+</div>`).join("")
+:`<p class="text-sm text-gray-300">No hospitals added yet.</p>`;
+};
+
+// ---------- Edit / Delete ----------
+list.onclick=e=>{
+
+let edit=e.target.closest("[data-edit]");
+if(edit)return load(edit.dataset.edit);
+
+let del=e.target.closest("[data-delete]");
+if(!del)return;
+
+if(confirm("Delete this hospital?")){
+hospitals=hospitals.filter(h=>h.id!=del.dataset.delete);
+drawHospitals();
+if(editId==del.dataset.delete)reset();
+}
+
+};
+
+// ---------- Load Hospital ----------
+const load=id=>{
+
+let h=hospitals.find(x=>x.id==id);
+if(!h)return;
+
+editId=h.id;
+
+state={
+id:h.id,
+name:h.name,
+location:h.location,
+emergency:h.emergency,
+branches:[...h.branches],
+departments:h.departments.map(d=>({
+name:d.name,
+doctors:[...d.doctors]
+}))
+};
+
+idIn.value=h.id;
+nameIn.value=h.name;
+locIn.value=h.location;
+emIn.checked=h.emergency;
+
+title.textContent="Edit Hospital";
+desc.textContent=`Editing "${h.name}". Save to apply changes.`;
+save.textContent="Save Changes";
+
+drawBranches();
+drawDept();
+fb();
+
+f.scrollIntoView({
+behavior:"smooth",
+block:"start"
+});
+
+};
+
+// ---------- Init ----------
+reset();
+drawHospitals();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+new admin html ui 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canopy Health — Hospital Admin</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        display: ['Fraunces', 'ui-serif', 'Georgia'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#F3F7F1',
+                            100: '#E1EDDD',
+                            200: '#C3DBBC',
+                            300: '#9EC395',
+                            400: '#74A56A',
+                            500: '#4F8748',
+                            600: '#1F7A55',
+                            700: '#145C41',
+                            800: '#0F3D2E',
+                            900: '#0B2B21',
+                        },
+                        gold: {
+                            50: '#FBF4E4',
+                            200: '#EAD39B',
+                            400: '#D6AD5C',
+                            500: '#C9973E',
+                            600: '#AD7C2C',
+                        },
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        html, body { background: #F6F1E4; }
+        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+        .font-display { font-family: 'Fraunces', ui-serif, Georgia, serif; }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #9EC395; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #1F7A55; }
+
+        input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(201, 151, 62, 0.35);
+        }
+
+        /* faint topographic / leaf-vein texture, purely decorative */
+        .canopy-texture {
+            background-image:
+                radial-gradient(circle at 15% 20%, rgba(255,255,255,0.05) 0, transparent 40%),
+                radial-gradient(circle at 85% 0%, rgba(255,255,255,0.06) 0, transparent 45%);
+        }
+
+        .leaf-rule {
+            background-image: linear-gradient(90deg, transparent, #C9973E 20%, #C9973E 80%, transparent);
+            height: 2px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen w-full text-brand-900">
+
+    <!-- ===== TOP NAV ===== -->
+    <nav class="canopy-texture bg-brand-900 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto px-6 py-7">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+
+                <div class="flex items-center gap-4">
+                    <!-- signature mark: single-line toucan, understated -->
+                    <div class="w-12 h-12 shrink-0 rounded-2xl bg-brand-800 border border-gold-500/40 flex items-center justify-center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 13c0-3.5 2.8-6 6.2-6 .8 0 1.4-.6 1.4-1.3 0-.5-.3-.9-.7-1.1 3.6-.4 8.1 1.6 8.1 5.6 0 1-.3 1.8-.8 2.5.9.2 1.8.7 1.8 1.6 0 1.4-2 1.7-3.4 1.7-.6 1.7-2.3 3-4.6 3-1 0-1.9-.2-2.6-.6" stroke="#EAD39B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M8.5 13.2c-1.6.6-2.9 1.9-2.9 3.4 0 1.4 1.4 2.4 3.2 2.4 1.5 0 2.7-.7 3.2-1.7" stroke="#EAD39B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="15" cy="9" r="0.9" fill="#EAD39B"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="uppercase tracking-[0.2em] text-[10px] text-gold-200/80 font-semibold mb-1">Field Operations</p>
+                        <h1 class="font-display text-3xl font-semibold text-brand-50">Hospital Admin Panel</h1>
+                        <p class="mt-1 text-sm text-brand-200/90">Add, edit, and retire hospital records from the network directory below.</p>
+                    </div>
+                </div>
+
+                <button id="new-hospital-btn"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-gold-500 px-5 py-3 text-sm font-semibold text-brand-900 shadow-lg shadow-black/20 transition hover:bg-gold-400">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Add New Hospital
+                </button>
+            </div>
+        </div>
+        <div class="leaf-rule w-full"></div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid lg:grid-cols-[1.5fr_0.6fr] w-full gap-6 items-start">
+
+            <section class="space-y-6">
+                <div class="overflow-hidden rounded-3xl bg-brand-900 border border-brand-700 shadow-xl shadow-brand-900/10">
+
+                    <div class="border-b border-brand-700 px-6 py-6 bg-brand-800/60">
+                        <p class="uppercase tracking-[0.2em] text-[10px] text-gold-200/80 font-semibold mb-1">Directory</p>
+                        <h2 class="font-display text-xl font-semibold text-brand-50">Hospital Information</h2>
+                        <p class="mt-1 text-sm text-brand-200/90">Manage hospital records, including emergency service availability.</p>
+                    </div>
+
+                    <div id="hospital-list" class="p-6">
+                        <p class="text-sm text-brand-300/70 italic">No hospitals added yet — use "Add New Hospital" to start the directory.</p>
+                    </div>
+
+                    <form id="hospital-form" class="space-y-6 text-white px-6 pb-6" type="submit">
+
+                        <div class="grid gap-4">
+
+                            <div>
+                                <div class="flex justify-between px-1">
+                                    <label for="hospital-id" class="block text-sm font-medium text-brand-100">Hospital ID</label>
+                                    <button id="id-gen-btn" type="button"
+                                        class="flex items-center gap-1.5 bg-brand-800 border border-brand-700 hover:border-gold-500 hover:text-gold-200 text-brand-100 rounded-xl px-3 py-1.5 text-xs font-semibold transition">
+                                        genID
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+                                    </button>
+                                </div>
+                                <input id="hospital-id" type="text" placeholder="Click genID to auto-generate" disabled
+                                    class="text-white mt-1 w-full rounded-2xl border border-brand-700 bg-brand-800 px-4 py-3 text-sm text-brand-50 placeholder:text-brand-400 outline-none transition focus:border-gold-500" />
+                            </div>
+
+                            <div>
+                                <label for="hospital-name" class="block text-sm font-medium text-brand-100">Hospital Name</label>
+                                <input id="hospital-name" type="text" placeholder="e.g. City General Hospital" required
+                                    class="text-white mt-1 w-full rounded-2xl border border-brand-700 bg-brand-800 px-4 py-3 text-sm placeholder:text-brand-400 outline-none transition focus:border-gold-500" />
+                            </div>
+
+                            <div>
+                                <label for="hospital-location" class="block text-sm font-medium text-brand-100">Main Location</label>
+                                <input id="hospital-location" type="text" placeholder="e.g. New York, NY" required
+                                    class="text-white mt-1 w-full rounded-2xl border border-brand-700 bg-brand-800 px-4 py-3 text-sm placeholder:text-brand-400 outline-none transition focus:border-gold-500" />
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <input id="hospital-emergency" type="checkbox"
+                                    class="h-5 w-5 rounded border-brand-700 bg-brand-800 text-gold-500 focus:ring-gold-500" />
+                                <label for="hospital-emergency" class="text-sm font-medium text-brand-100">Emergency services available</label>
+                            </div>
+                        </div>
+
+                        <div class="rounded-3xl border border-brand-700 p-4 shadow-sm space-y-4">
+
+                            <!-- Branches -->
+                            <div class="rounded-3xl border border-brand-700 bg-brand-800/40 p-4">
+                                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 class="font-display text-lg font-semibold text-brand-50">Hospital Branches</h3>
+                                        <p class="text-sm text-brand-200/90">Add all branches and satellite locations for this hospital.</p>
+                                    </div>
+                                    <button type="button" id="add-branch-btn"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-500">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                                        Add Branch
+                                    </button>
+                                </div>
+
+                                <!-- Branch Input template -->
+                                <div id="branch-template" class="hidden mb-5">
+                                    <div class="flex items-center gap-3">
+                                        <input id="branch-input" type="text" placeholder="Branch location"
+                                            class="branch-location flex-1 text-white mt-1 rounded-2xl border border-brand-700 bg-brand-800 px-4 py-3 text-sm placeholder:text-brand-400 outline-none transition focus:border-gold-500" />
+
+                                        <button type="button" data-action="add-branch"
+                                            class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-500">
+                                            Add
+                                        </button>
+
+                                        <button type="button" data-action="remove-branch"
+                                            class="inline-flex items-center justify-center rounded-xl bg-brand-800 border border-brand-700 px-4 py-2 text-sm font-semibold text-brand-100 transition hover:border-rose-400 hover:text-rose-300">
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Added Branches -->
+                                <div id="branches-list" class="flex flex-col gap-3"></div>
+                            </div>
+
+                            <!-- Departments & Doctors -->
+                            <div class="rounded-3xl border border-brand-700 bg-brand-800/40 p-4 shadow-sm">
+                                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 class="font-display text-lg font-semibold text-brand-50">Departments &amp; Doctors</h3>
+                                        <p class="text-sm text-brand-200/90">Create departments and assign doctors to each department.</p>
+                                    </div>
+                                    <button type="button" id="add-department-btn" data-action="add-department"
+                                        class="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-500">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                                        Add Department
+                                    </button>
+                                </div>
+
+                                <div id="departments-list" class="space-y-5">
+
+                                    <div id="add-dept" class="rounded-xl border border-brand-700 bg-brand-900/60 p-4 text-white hidden">
+                                        <span class="text-xs uppercase tracking-wide text-brand-300 font-semibold">Add a department</span>
+                                        <input type="text" id="select-dept" name="department" list="department-list"
+                                            placeholder="Search department..." autocomplete="off"
+                                            class="w-full mt-2 rounded-2xl border border-brand-700 bg-brand-800 px-4 py-3 text-sm text-brand-50 placeholder:text-brand-400 outline-none transition focus:border-gold-500">
+
+                                        <button id="save-department-btn" type="button"
+                                            class="mt-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-brand-900 font-semibold px-4 py-2 text-sm transition">
+                                            Add Department
+                                        </button>
+
+                                        <datalist id="department-list">
+                                            <option value="General Medicine">
+                                            <option value="Cardiology">
+                                            <option value="Neurology">
+                                            <option value="Neurosurgery">
+                                            <option value="Orthopedics">
+                                            <option value="General Surgery">
+                                            <option value="Pediatrics">
+                                            <option value="Gynecology">
+                                            <option value="Obstetrics">
+                                            <option value="Dermatology">
+                                            <option value="ENT (Ear, Nose & Throat)">
+                                            <option value="Ophthalmology">
+                                            <option value="Urology">
+                                            <option value="Nephrology">
+                                            <option value="Pulmonology">
+                                            <option value="Gastroenterology">
+                                            <option value="Endocrinology">
+                                            <option value="Psychiatry">
+                                            <option value="Psychology">
+                                            <option value="Radiology">
+                                            <option value="Pathology">
+                                            <option value="Emergency Medicine">
+                                            <option value="Anesthesiology">
+                                            <option value="ICU (Intensive Care Unit)">
+                                            <option value="Physiotherapy">
+                                            <option value="Oncology">
+                                            <option value="Dental">
+                                            <option value="Plastic Surgery">
+                                            <option value="Rheumatology">
+                                            <option value="Infectious Diseases">
+                                        </datalist>
+                                    </div>
+
+                                    <div id="add-doctor" class="rounded-xl border border-brand-700 bg-brand-900/60 p-4 text-white hidden">
+                                        <span class="text-xs uppercase tracking-wide text-brand-300 font-semibold">Add a doctor</span>
+
+                                        <input type="text" id="select-doctor" name="doctor"
+                                            placeholder="Enter doctor name..." autocomplete="off"
+                                            class="w-full mt-2 rounded-2xl border border-brand-700 bg-brand-800 px-4 py-3 text-sm text-white placeholder:text-brand-400 outline-none transition focus:border-gold-500">
+
+                                        <button id="save-doctor-btn" type="button"
+                                            class="mt-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-brand-900 font-semibold px-4 py-2 text-sm transition">
+                                            Add Doctor
+                                        </button>
+                                    </div>
+
+                                    <div id="departments-container"></div>
+
+                                </div>
+                            </div>
+
+                            <div id="form-feedback" class="min-h-[1.5rem] text-sm text-rose-300"></div>
+
+                            <div class="flex justify-end flex-wrap gap-3 pt-2">
+                                <button id="save-hospital-btn"
+                                    class="inline-flex items-center justify-center rounded-2xl bg-gold-500 px-5 py-3 text-sm font-semibold text-brand-900 shadow-md shadow-black/10 transition hover:bg-gold-400">
+                                    Add hospital
+                                </button>
+                                <button type="button" id="cancel-hospital-btn"
+                                    class="text-brand-200 transition hover:text-white hover:bg-brand-800 rounded-xl px-4 py-3 text-sm font-semibold">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </section>
+
+            <aside class="space-y-6 lg:sticky lg:top-6">
+                <div class="rounded-3xl p-6 shadow-xl border border-brand-700 bg-brand-900">
+                    <div class="mb-5 flex items-start justify-between gap-3">
+                        <div>
+                            <p class="uppercase tracking-[0.2em] text-[10px] text-gold-200/80 font-semibold mb-1">Preview</p>
+                            <h2 id="form-title" class="font-display text-xl font-semibold text-brand-50">Add Hospital</h2>
+                            <p id="form-description" class="mt-1 text-sm text-brand-200/90">Provide hospital details and save to update the list.</p>
+                        </div>
+                    </div>
+
+                    <button id="clear-storage-btn"
+                        class="inline-flex items-center gap-1.5 bg-rose-500/90 hover:bg-rose-500 text-white rounded-2xl px-3 py-2 text-xs font-bold mb-5 transition">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+                        Clear Storage
+                    </button>
+
+                    <div id="form-preview"
+                        class="rounded-3xl w-full px-3 border border-brand-700 bg-brand-800/40 h-fit p-4 flex flex-col gap-2 text-brand-200">
+                        <p class="text-sm italic text-brand-300/70">Your entries will appear here as you fill out the form.</p>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script src="admin.js" type="module"></script>
+    <script src="./data.js" type="module"></script>
+</body>
+
+</html> 
